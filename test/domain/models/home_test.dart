@@ -115,6 +115,14 @@ void main() {
       expect(h.copyWith(lights: [l.copyWith(wasReset: false)]).ready, hasLength(1));
     });
 
+    test('saves a color, and leaves it out for white', () {
+      const lamp = Light(addr: 0x10, name: 'Lamp', devKey: 'a1a2a3a4a5a6a7a8a9aaabacadaeafb0');
+      expect(lamp.toJson(), isNot(contains('hue')));
+      final red = lamp.copyWith(hue: 350, saturation: 60);
+      expect(Light.fromJson(red.toJson()), red);
+      expect(Light.fromJson({...red.toJson(), 'hue': 370, 'saturation': 140}).hue, 10);
+    });
+
     test('clamps level and temperature from JSON', () {
       final l = Light.fromJson({'addr': 1, 'devKey': 'aa', 'level': 400, 'kelvin': 100});
       expect([l.level, l.kelvin], [100, minKelvin]);

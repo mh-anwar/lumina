@@ -162,6 +162,9 @@ class LightSliders extends StatelessWidget {
   final bool showWarmth;
   final ValueChanged<int> onLevel;
   final ValueChanged<int>? onKelvin;
+
+  /// The brightness track's color when the light shows a color.
+  final Color? color;
   const LightSliders({
     super.key,
     required this.level,
@@ -169,6 +172,7 @@ class LightSliders extends StatelessWidget {
     required this.onLevel,
     this.onKelvin,
     this.showWarmth = true,
+    this.color,
   });
 
   @override
@@ -181,7 +185,7 @@ class LightSliders extends StatelessWidget {
           value: level.toDouble(),
           min: 1,
           max: 100,
-          gradient: brightGradient(context, kelvinColor(kelvin)),
+          gradient: brightGradient(context, color ?? kelvinColor(kelvin)),
           onChanged: (v) => onLevel(v.round()),
         ),
         if (showWarmth && onKelvin != null)
@@ -612,5 +616,100 @@ class WhiteToneSwatches extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+/// Colors to pick from, by hue in degrees.
+const colorTones = [
+  (name: 'Red', hue: 0),
+  (name: 'Orange', hue: 30),
+  (name: 'Yellow', hue: 55),
+  (name: 'Green', hue: 120),
+  (name: 'Cyan', hue: 185),
+  (name: 'Blue', hue: 225),
+  (name: 'Purple', hue: 275),
+  (name: 'Pink', hue: 320),
+];
+
+/// Hue and saturation sliders, with a row of colors to pick from.
+class ColorControls extends StatelessWidget {
+  final int hue, saturation;
+  final ValueChanged<int> onHue, onSaturation;
+  const ColorControls({
+    super.key,
+    required this.hue,
+    required this.saturation,
+    required this.onHue,
+    required this.onSaturation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    final full = lookColor(kelvin: 0, hue: hue);
+    final nearest = colorTones.reduce((a, b) => _gap(a.hue) <= _gap(b.hue) ? a : b);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GradientSlider(
+          label: 'Color',
+          valueText: '$hue°',
+          value: hue.toDouble(),
+          min: 0,
+          max: 359,
+          gradient: LinearGradient(
+            colors: [for (var h = 0; h <= 360; h += 60) lookColor(kelvin: 0, hue: h)],
+          ),
+          onChanged: (v) => onHue(v.round()),
+        ),
+        GradientSlider(
+          label: 'Saturation',
+          valueText: '$saturation%',
+          value: saturation.toDouble(),
+          min: 0,
+          max: 100,
+          gradient: LinearGradient(colors: [Colors.white, full]),
+          onChanged: (v) => onSaturation(v.round()),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final t in colorTones)
+              Semantics(
+                button: true,
+                selected: t == nearest && saturation >= 50,
+                label: t.name,
+                excludeSemantics: true,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () {
+                    onHue(t.hue);
+                    if (saturation < 50) onSaturation(100);
+                  },
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: lookColor(kelvin: 0, hue: t.hue),
+                      border: Border.all(
+                        color: t == nearest && saturation >= 50 ? p.text : p.line,
+                        width: t == nearest && saturation >= 50 ? 2.5 : 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  int _gap(int h) {
+    final d = (h - hue).abs() % 360;
+    return d > 180 ? 360 - d : d;
   }
 }

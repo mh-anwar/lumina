@@ -29,6 +29,13 @@ abstract class Light with _$Light {
     @Default(70) int level,
     @Default(3000) int kelvin,
 
+    /// The color's hue in degrees (0–359), or null when the light shows
+    /// white at [kelvin]. Only for lights with the HSL model.
+    int? hue,
+
+    /// The color's saturation, 0–100 %.
+    @Default(100) int saturation,
+
     /// Models (keys of `Models.bindable`) subscribed to [allLightsGroup].
     @Default({}) Set<String> groupModels,
 
@@ -50,6 +57,10 @@ abstract class Light with _$Light {
   bool get usable => configured && !wasReset;
   bool get hasCtl => has('ctl');
   bool get hasLightness => has('lightness');
+  bool get hasHsl => has('hsl');
+
+  /// Shows a color rather than white.
+  bool get inColor => hasHsl && hue != null;
 
   /// Whether every groupable model this light has is in [allLightsGroup].
   bool get grouped => groupable.every((k) => !has(k) || groupModels.contains(k));
@@ -85,6 +96,14 @@ abstract class Light with _$Light {
           // Written by builds that grouped only the light models.
           if (j['grouped'] == true) ...['onoff', 'lightness', 'ctl'],
         },
+        hue: switch (j['hue']) {
+          final num v => v.round() % 360,
+          _ => null,
+        },
+        saturation: switch (j['saturation']) {
+          final num v => v.round().clamp(0, 100),
+          _ => 100,
+        },
         bleId: switch (j['bleId']) {
           final String id => id,
           _ => null,
@@ -105,6 +124,7 @@ abstract class Light with _$Light {
     'level': level,
     'kelvin': kelvin,
     'groupModels': groupModels.toList(),
+    if (hue != null) ...{'hue': hue, 'saturation': saturation},
     if (bleId != null) 'bleId': bleId,
     if (wasReset) 'wasReset': true,
   };

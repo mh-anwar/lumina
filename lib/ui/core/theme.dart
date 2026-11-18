@@ -167,3 +167,8 @@ Color kelvinColor(int k) {
   int c(double v) => v.round().clamp(0, 255);
   return Color.fromARGB(255, c(r), c(g), c(b));
 }
+
+/// The color a light shows: its hue when it's in color, else its white.
+Color lookColor({required int kelvin, int? hue, int saturation = 100}) => hue == null
+    ? kelvinColor(kelvin)
+    : HSVColor.fromAHSV(1, (hue % 360).toDouble(), saturation.clamp(0, 100) / 100, 1).toColor();

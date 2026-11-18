@@ -17,8 +17,20 @@ void main() {
       await h.add(bulb);
       expect(bulb.bound, {0x1000, 0x1300, 0x1303, 0x1304, 0x1203, 0x1204, 0x1206, 0x1207});
       expect(h.single.models.values.every((v) => v), isTrue);
-      expect(h.single.models.keys.toSet(), Models.bindable.keys.toSet());
+      expect(h.single.models.keys.toSet(), Models.bindable.keys.toSet().difference({'hsl', 'hslSetup'}));
+      expect(h.single.hasHsl, isFalse);
       expect(h.log.text, contains('0x05040000'));
+    });
+
+    test('binds color on a bulb that sends its composition under another page number', () async {
+      final bulb = MockBulb('AA:01', 'Bulb E5AC')
+        ..sigModels = [...MockBulb('', '').sigModels, Models.hsl, Models.hslSetup]
+        ..compositionPage = 0xee;
+      final h = await Harness.start(FakeBle([bulb]));
+      await h.add(bulb);
+      expect(bulb.bound, containsAll([Models.hsl, Models.hslSetup, Models.ctlSetup]));
+      expect(h.single.hasHsl, isTrue);
+      expect(h.log.text, isNot(contains('No composition data')));
     });
 
     test('falls back to the light models without composition data', () async {
@@ -283,6 +295,51 @@ void main() {
       expect(bulbs.map((b) => b.kelvin), everyElement(preset('Relax').kelvin));
       // One recall, then a state query (2 messages) per light.
       expect(phoneWrites(bulbs) - before, 1 + 2 * bulbs.length);
+    });
+  });
+
+  group('color', () {
+    Future<(Harness, MockBulb)> colorBulb() async {
+      final bulb = MockBulb('AA:01', 'Bulb E5AC')
+        ..sigModels = [...MockBulb('', '').sigModels, Models.hsl, Models.hslSetup];
+      final h = await Harness.start(FakeBle([bulb]));
+      await h.add(bulb);
+      return (h, bulb);
+    }
+
+    test('a hue switches the light to color, a temperature back to white', () async {
+      final (h, bulb) = await colorBulb();
+      h.lights.setLevel(0x10, hue: 225, saturation: 80);
+      await settle(100);
+      expect([h.single.hue, h.single.saturation, h.single.inColor], [225, 80, true]);
+      expect(bulb.hue, LightRepository.toHue(225));
+      expect(bulb.saturation, LightRepository.toSaturation(80));
+      expect(bulb.on, isTrue);
+
+      // Brightness keeps the color.
+      h.lights.setLevel(0x10, level: 50);
+      await settle(100);
+      expect(bulb.hue, LightRepository.toHue(225));
+      expect(bulb.lightness, LightRepository.toLightness(50));
+
+      h.lights.setLevel(0x10, kelvin: 4000);
+      await settle(100);
+      expect(h.single.inColor, isFalse);
+      expect(bulb.kelvin, 4000);
+    });
+
+    test('a white bulb ignores a hue', () async {
+      final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
+      final h = await Harness.start(FakeBle([bulb]));
+      await h.add(bulb);
+      h.lights.setLevel(0x10, hue: 120);
+      await settle(100);
+      expect(h.single.hue, isNull);
+    });
+
+    test('hue and saturation map to the 16-bit HSL ranges', () {
+      expect([0, 90, 180, 359, 360].map(LightRepository.toHue), [0, 16384, 32768, 65354, 0]);
+      expect([0, 50, 100].map(LightRepository.toSaturation), [0, 32768, 65535]);
     });
   });
 }

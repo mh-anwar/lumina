@@ -27,6 +27,9 @@ class _LightSheet extends StatefulWidget {
 class _LightSheetState extends State<_LightSheet> {
   HomeViewModel get c => widget.viewModel;
 
+  /// The hue to show when switching to color, so it comes back as it was.
+  late int _lastHue = _light?.hue ?? 30;
+
   /// The answer to the last action taken in this sheet.
   String? _note;
   bool _noteIsError = false;
@@ -89,11 +92,33 @@ class _LightSheetState extends State<_LightSheet> {
               ),
             ],
             if (dimmable) ...[
+              if (l != null && l.hasHsl) ...[
+                const SizedBox(height: 16),
+                SegmentedButton<bool>(
+                  showSelectedIcon: false,
+                  style: SegmentedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(radiusSmall),
+                    ),
+                  ),
+                  segments: const [
+                    ButtonSegment(value: false, label: Text('White')),
+                    ButtonSegment(value: true, label: Text('Color')),
+                  ],
+                  selected: {l.inColor},
+                  onSelectionChanged: (v) => v.first
+                      ? c.setLight(l, hue: _lastHue)
+                      : c.setLight(l, kelvin: l.kelvin),
+                ),
+              ],
               const SizedBox(height: 16),
               LightSliders(
                 level: l == null ? c.allLevel : l.level,
                 kelvin: l == null ? c.allKelvin : l.kelvin,
-                showWarmth: l == null ? c.ready.any((x) => x.hasCtl) : l.hasCtl,
+                color: l != null && l.inColor
+                    ? lookColor(kelvin: l.kelvin, hue: l.hue, saturation: l.saturation)
+                    : null,
+                showWarmth: l == null ? c.ready.any((x) => x.hasCtl) : l.hasCtl && !l.inColor,
                 onLevel: (v) {
                   if (l == null) {
                     c.setAll(level: v);
@@ -103,7 +128,17 @@ class _LightSheetState extends State<_LightSheet> {
                 },
                 onKelvin: _setKelvin,
               ),
-              if (l == null ? c.ready.any((x) => x.hasCtl) : l.hasCtl) ...[
+              if (l != null && l.inColor)
+                ColorControls(
+                  hue: l.hue ?? 0,
+                  saturation: l.saturation,
+                  onHue: (h) {
+                    _lastHue = h;
+                    c.setLight(l, hue: h);
+                  },
+                  onSaturation: (v) => c.setLight(l, hue: l.hue, saturation: v),
+                )
+              else if (l == null ? c.ready.any((x) => x.hasCtl) : l.hasCtl) ...[
                 const SizedBox(height: 4),
                 WhiteToneSwatches(kelvin: l == null ? c.allKelvin : l.kelvin, onPick: _setKelvin),
               ],
