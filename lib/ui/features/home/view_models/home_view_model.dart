@@ -513,7 +513,9 @@ class HomeViewModel extends ChangeNotifier {
     await _home.restore(code);
     _lights.resetStates();
     final n = lights.length;
-    _say('Restored $n light${n == 1 ? '' : 's'}.');
+    // Connect straight away; if that fails, its message says why.
+    await connect();
+    if (isConnected) _say('Restored $n light${n == 1 ? '' : 's'}.');
     return true;
   }
 

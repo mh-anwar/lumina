@@ -51,6 +51,17 @@ void main() {
     expect(bulb.kelvin, 4000);
   });
 
+  test('restoring a backup connects at once', () async {
+    final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
+    final h = await Harness.start(FakeBle([bulb]));
+    await h.vm.addLight(nearby(bulb));
+    final code = h.vm.backupCode();
+    await h.vm.disconnect();
+    expect(await h.vm.restore(code), isTrue);
+    expect(h.vm.isConnected, isTrue);
+    expect(h.vm.status, 'Restored 1 light.');
+  });
+
   test('connects by itself when a command needs it', () async {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
     final h = await Harness.start(FakeBle([bulb]));
@@ -149,8 +160,10 @@ void main() {
     expect(h.vm.lights, isEmpty);
 
     expect(await h.vm.restore(code), isTrue);
-    expect(h.vm.status, 'Restored 1 light.');
     expect(h.vm.lights, hasLength(1));
+    // Restoring connects at once; the removed bulb was reset, so it's gone.
+    expect(h.vm.isConnected, isFalse);
+    expect(h.vm.status, startsWith('No lights found'));
 
     await h.vm.startOver();
     expect(h.vm.lights, isEmpty);

@@ -19,7 +19,7 @@ void main() {
     expect(vm.scanning, isTrue);
     await settle();
     expect(vm.found.map((b) => b.name), ['BLE Bulb_A9CB', 'BLE Bulb_7B2E']);
-    expect(vm.scanning, isFalse);
+    expect(vm.scanning, isTrue, reason: 'keeps looking until the sheet closes');
     expect(vm.error, isNull);
     await vm.stop();
     vm.dispose();
