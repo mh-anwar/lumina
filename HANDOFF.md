@@ -5,7 +5,12 @@ State of Lumina for the next agent, as of `main` at `48f378a`. Read CLAUDE.md fi
 ## CI status
 The last runs on `main` were cancelled by newer pushes or hung before the hang fix. `48f378a` (the hang fix) is the first run expected to pass end to end. Check it with `gh run list -R mh-anwar/lumina --branch main`. Locally, `flutter analyze` is clean, and the formerly hanging tests pass in about 4 s.
 
-**Known failing test on `main`:** `home_view_model_test.dart`, "remove, scenes, backup and forgetting all lights say what happened". After restoring a backup whose bulb was removed, it expects a status starting "No lights found" but gets "… was reset". `ux-viewmodel` already updates this expectation; otherwise, change it on `main`. The `48f378a` run had failing tests before a later push cancelled it.
+**Three tests fail on `main`** (seen in run 44263071118). All three come from restore now connecting at once:
+1. `test/ui/features/home/view_models/home_view_model_test.dart`, "remove, scenes, backup and forgetting all lights say what happened": the status is now "BLE Bulb_7B2E was reset. …" instead of "No lights found…". The new message is correct; update the expectation. `ux-viewmodel` already does.
+2. `test/data/repositories/home_repository_test.dart`, "backup and restore round trip, with a SEQ margin": SEQ is the old value + 100,000 + 65, because connecting sends messages. Assert `>=` instead of equality.
+3. `test/data/repositories/home_repository_test.dart`, "SEQ never goes backwards across restarts": an expectation is false. This is probably the same auto-connect effect; investigate first, since SEQ must only go up.
+
+Fix these first, in one PR.
 
 ## How to work here
 
