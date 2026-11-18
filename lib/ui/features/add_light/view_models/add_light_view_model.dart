@@ -30,6 +30,10 @@ class AddLightViewModel extends ChangeNotifier {
   final _rssi = <String, double>{};
   static const _smoothing = 0.3;
 
+  /// Bulbs heard during the current scan. When a scan ends, bulbs it never
+  /// heard (added by another phone, unplugged, out of range) leave the list.
+  final _heard = <String>{};
+
   /// In the order they were first found, with smoothed signal strength.
   List<NearbyBulb> get found => _found;
   bool get scanning => _scanning;
@@ -54,6 +58,7 @@ class AddLightViewModel extends ChangeNotifier {
   }
 
   void _listen() {
+    _heard.clear();
     _sub = _provisioning.scan().listen(
       (list) {
         _update(list);
@@ -66,6 +71,7 @@ class AddLightViewModel extends ChangeNotifier {
       },
       onDone: () {
         if (!_stopped && _error == null) {
+          _dropUnheard();
           _rescan = Timer(rescanPause, () {
             if (!_stopped) _listen();
           });
@@ -77,8 +83,22 @@ class AddLightViewModel extends ChangeNotifier {
     );
   }
 
+  void _dropUnheard() {
+    final gone = _order.where((id) => !_heard.contains(id)).toList();
+    if (gone.isEmpty) return;
+    for (final id in gone) {
+      _order.remove(id);
+      _names.remove(id);
+      _replaces.remove(id);
+      _rssi.remove(id);
+    }
+    _update(const []);
+    notifyListeners();
+  }
+
   void _update(List<NearbyBulb> list) {
     for (final b in list) {
+      _heard.add(b.id);
       final prev = _rssi[b.id];
       if (prev == null) _order.add(b.id);
       _rssi[b.id] = prev == null ? b.rssi.toDouble() : prev + _smoothing * (b.rssi - prev);
@@ -104,7 +124,7 @@ class AddLightViewModel extends ChangeNotifier {
 
   /// The row subtitle: signal strength, and whether it replaces a light.
   static String subtitle(NearbyBulb b) =>
-      b.replaces == null ? signal(b.rssi) : 'Was reset, sets it up again · ${signal(b.rssi)}';
+      b.replaces == null ? signal(b.rssi) : 'Reset · adds it back · ${signal(b.rssi)}';
 
   static String signal(int rssi) => rssi > -60
       ? 'Very close'

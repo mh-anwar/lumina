@@ -215,11 +215,20 @@ class _LightSheetState extends State<_LightSheet> {
           controller: t,
           autofocus: true,
           textCapitalization: TextCapitalization.sentences,
-          onSubmitted: (_) => Navigator.pop(ctx, true),
+          onSubmitted: (v) {
+            if (v.trim().isNotEmpty) Navigator.pop(ctx, true);
+          },
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          // A light needs a name: Save waits for one.
+          ValueListenableBuilder(
+            valueListenable: t,
+            builder: (_, v, _) => FilledButton(
+              onPressed: v.text.trim().isEmpty ? null : () => Navigator.pop(ctx, true),
+              child: const Text('Save'),
+            ),
+          ),
         ],
       ),
     );

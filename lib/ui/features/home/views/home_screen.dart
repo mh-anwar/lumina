@@ -296,12 +296,12 @@ class _Header extends StatelessWidget {
                       Text(c.connectionLabel, style: TextStyle(color: p.muted, fontSize: 14)),
                       if (c.showRetry)
                         TextButton(
-                          onPressed: c.connect,
+                          onPressed: c.showOpenSettings ? c.openSettings : c.connect,
                           style: TextButton.styleFrom(
                             visualDensity: VisualDensity.compact,
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
-                          child: const Text('Try again'),
+                          child: Text(c.showOpenSettings ? 'Open settings' : 'Try again'),
                         ),
                     ],
                   ),

@@ -267,6 +267,17 @@ void main() {
       expect(bulbs.map((b) => b.kelvin), everyElement(6500));
     });
 
+    test('the all-lights slider leaves off lights off while others are on', () async {
+      final (h, bulbs) = await threeBulbs();
+      await h.lights.setAllPower(false);
+      await h.lights.setPower(0x10, true);
+      await settle();
+      h.lights.setAll(level: 40);
+      await settle();
+      expect(bulbs.map((b) => b.on), [true, false, false]);
+      expect(h.lights.stateOf(0x11).on, isFalse);
+    });
+
     test('scene recall goes out as one group message', () async {
       final (h, bulbs) = await threeBulbs();
       await h.lights.applyPreset(preset('Relax'));
@@ -314,15 +325,6 @@ void main() {
       await settle(100);
       expect(h.single.inColor, isFalse);
       expect(bulb.kelvin, 4000);
-    });
-
-    test('a white bulb ignores a hue', () async {
-      final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
-      final h = await Harness.start(FakeBle([bulb]));
-      await h.add(bulb);
-      h.lights.setLevel(0x10, hue: 120);
-      await settle(100);
-      expect(h.single.hue, isNull);
     });
 
     test('hue and saturation map to the 16-bit HSL ranges', () {

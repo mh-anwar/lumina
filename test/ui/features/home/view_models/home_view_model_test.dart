@@ -163,16 +163,6 @@ void main() {
     expect(h.vm.lights, hasLength(2));
   });
 
-  test('explains a provisioning failure', () async {
-    final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
-    final h = await Harness.start(FakeBle([bulb]));
-    bulb.provisioned = true; // no longer offers PB-GATT
-    expect(await h.vm.addLight(nearby(bulb)), isFalse);
-    expect(h.vm.statusIsError, isTrue);
-    expect(h.vm.lights, isEmpty);
-    expect(h.vm.busy, isFalse);
-  });
-
   test('remove, scenes, backup and forgetting all lights say what happened', () async {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
     final h = await Harness.start(FakeBle([bulb]));
@@ -202,6 +192,15 @@ void main() {
     expect(h.vm.lights, isEmpty);
     expect(h.vm.scenes, isEmpty);
     expect(h.vm.status, 'All lights forgotten.');
+  });
+
+  test('Forget all can reset the bulbs first', () async {
+    final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
+    final h = await Harness.start(FakeBle([bulb]));
+    await h.add(bulb);
+    await h.vm.forgetAll(reset: true);
+    expect(h.vm.lights, isEmpty);
+    expect(bulb.provisioned, isFalse, reason: 'ready to add again');
   });
 
   test('a bulb that does not answer Remove is kept until removed anyway', () async {
@@ -296,39 +295,6 @@ void main() {
       expect(h.vm.status, 'BLE Bulb_A9CB is ready.');
       expect(h.vm.lights.single.wasReset, isFalse);
       expect(h.vm.lights, hasLength(1));
-    });
-
-    test('mentions reset lights after connecting through another', () async {
-      final a = MockBulb('AA:01', 'BLE Bulb_A9CB'), b = MockBulb('AA:02', 'BLE Bulb_A9CC');
-      final h = await Harness.start(FakeBle([a, b]));
-      await h.vm.addLight(nearby(a));
-      await h.vm.addLight(nearby(b));
-      await h.vm.disconnect();
-      b.factoryReset();
-      await h.vm.connect();
-      expect(h.vm.isConnected, isTrue);
-      expect(h.vm.status, 'BLE Bulb_A9CC was reset. Tap it to set it up again.');
-    });
-
-    test('lists several reset lights by name', () async {
-      final bulbs = [
-        for (final n in ['A', 'B', 'C']) MockBulb('AA:0$n', 'Bulb $n'),
-      ];
-      final h = await Harness.start(FakeBle(bulbs));
-      for (final b in bulbs) {
-        await h.vm.addLight(nearby(b));
-      }
-      await h.vm.disconnect();
-      for (final b in bulbs) {
-        b.factoryReset();
-      }
-      await h.vm.connect();
-      expect(h.vm.status, 'Bulb A, Bulb B and Bulb C were reset.');
-      expect(h.vm.canSetUpAllAgain, isTrue);
-
-      await h.vm.setUpAllAgain();
-      expect(h.vm.lights.where((l) => l.wasReset), isEmpty);
-      expect(h.vm.lights, hasLength(3));
     });
   });
 

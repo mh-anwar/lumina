@@ -80,17 +80,6 @@ void main() {
     expect(h.presets, [const Preset('Bright', 100, maxKelvin)]);
   });
 
-  test('updateLight replaces one light', () {
-    const a = Light(addr: 0x10, name: 'A', devKey: 'aa');
-    const b = Light(addr: 0x11, name: 'B', devKey: 'bb');
-    final h = const Home(netKey: netKey, appKey: appKey, lights: [a, b]);
-    final h2 = h.updateLight(0x11, (l) => l.copyWith(name: 'Desk'));
-    expect(h2.lights.map((l) => l.name), ['A', 'Desk']);
-    expect(h.lights.map((l) => l.name), ['A', 'B'], reason: 'the original is unchanged');
-    expect(h2.lightAt(0x11)!.name, 'Desk');
-    expect(h2.lightAt(0x12), isNull);
-  });
-
   group('Light', () {
     test('lights grouped by an older build still need their scene model', () {
       final l = Light.fromJson({

@@ -288,15 +288,19 @@ class LightRepository extends ChangeNotifier {
 
   /// Sends each light the message [build] makes for it, through the All
   /// lights group where the light's model is subscribed.
+  /// Sends [lights] their messages, through the all-lights group where it
+  /// can. With [viaGroup] false each light gets its own message, so lights
+  /// left out of [lights] aren't changed by a group broadcast.
   Future<void> _sendToAll(
     List<Light> lights,
-    (String, List<int>)? Function(Light l, int tid) build,
-  ) => _safe(() async {
+    (String, List<int>)? Function(Light l, int tid) build, {
+    bool viaGroup = true,
+  }) => _safe(() async {
     final tid = _proxy.nextTid();
     await _proxy.sendEach(allLightsGroup, [
       for (final l in lights)
         if (build(l, tid) case (final model, final access))
-          (addr: l.addr, access: access, subscribed: l.groupModels.contains(model)),
+          (addr: l.addr, access: access, subscribed: viaGroup && l.groupModels.contains(model)),
     ]);
   });
 
@@ -332,7 +336,26 @@ class LightRepository extends ChangeNotifier {
   final _perLight = <int, ThrottleDebouncer>{};
   late final _allThrottle = ThrottleDebouncer(duration: timings.throttle);
 
-  Future<void> _sendLevelAll() => _sendToAll(_ready, _levelMsg);
+  /// The lights the all-lights sliders change: the ones that are on, or
+  /// every light when none are, so a slider never turns on a light that was
+  /// off while others are on.
+  List<Light> get _sliderTargets {
+    final on = [
+      for (final l in _ready)
+        if (stateOf(l.addr).on) l,
+    ];
+    return on.isEmpty ? _ready : on;
+  }
+
+  /// Sends [addrs] their current brightness and look, read when sending so
+  /// the latest slider value goes out.
+  Future<void> _sendLevelAll(Set<int> addrs) {
+    final lights = [
+      for (final l in _ready)
+        if (addrs.contains(l.addr)) l,
+    ];
+    return _sendToAll(lights, _levelMsg, viaGroup: lights.length == _ready.length);
+  }
 
   /// [l] with a new brightness and/or look. A temperature switches it to
   /// white; a hue switches it to color.
@@ -376,8 +399,8 @@ class LightRepository extends ChangeNotifier {
         );
   }
 
-  Future<void> _setAllLevels(int? level, int? kelvin) {
-    final addrs = {for (final l in _ready) l.addr};
+  Future<void> _setAllLevels(List<Light> lights, int? level, int? kelvin) {
+    final addrs = {for (final l in lights) l.addr};
     for (final a in addrs) {
       _setState(a, (s) => s.copyWith(on: true));
     }
@@ -393,14 +416,19 @@ class LightRepository extends ChangeNotifier {
 
   /// Updates every light's brightness and/or temperature (from a slider).
   /// With [send] false only the lights' state changes.
-  void setAll({int? level, int? kelvin, bool send = true}) {
-    unawaited(_setAllLevels(level, kelvin));
-    if (send) _allThrottle.call(_sendLevelAll);
+  /// Changes only the lights that are on, unless all are off, or with
+  /// [every] all of them (a scene preview).
+  void setAll({int? level, int? kelvin, bool send = true, bool every = false}) {
+    final targets = every ? _ready : _sliderTargets;
+    unawaited(_setAllLevels(targets, level, kelvin));
+    final addrs = {for (final l in targets) l.addr};
+    if (send) _allThrottle.call(() => _sendLevelAll(addrs));
   }
 
+  /// Turns every light on with [p]'s look.
   Future<void> applyPreset(Preset p) async {
-    unawaited(_setAllLevels(p.level, p.kelvin));
-    await _sendLevelAll();
+    unawaited(_setAllLevels(_ready, p.level, p.kelvin));
+    await _sendLevelAll({for (final l in _ready) l.addr});
   }
 
   // ---------- manage ----------
