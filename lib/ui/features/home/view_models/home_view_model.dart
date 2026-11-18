@@ -254,6 +254,7 @@ class HomeViewModel extends ChangeNotifier {
   /// Provisions and configures [bulb]. Returns true if it joined the network
   /// (even if its setup is unfinished).
   Future<bool> addLight(NearbyBulb bulb) async {
+    await _whileBusy();
     if (_busy) return false;
     _busy = true;
     _say('Connecting to ${bulb.name}…');
@@ -338,11 +339,16 @@ class HomeViewModel extends ChangeNotifier {
   /// Returns false if the lights can't be reached.
   Future<bool> _connected() async {
     if (isConnected) return true;
+    await _whileBusy();
+    if (!isConnected) await connect();
+    return isConnected;
+  }
+
+  /// Waits for a connect or setup in progress (such as a reconnect) to end.
+  Future<void> _whileBusy() async {
     for (var i = 0; i < 300 && _busy; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
-    if (!isConnected) await connect();
-    return isConnected;
   }
 
   Future<void> toggleAll() async {
