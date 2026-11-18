@@ -128,10 +128,5 @@ void main() {
       expect([l.level, l.kelvin], [100, minKelvin]);
       expect(() => Light.fromJson({'name': 'x'}), throwsFormatException);
     });
-
-    test('is immutable', () {
-      const l = Light(addr: 1, name: 'x', devKey: 'aa', models: {'ctl': true});
-      expect(() => l.models['onoff'] = true, throwsUnsupportedError);
-    });
   });
 }

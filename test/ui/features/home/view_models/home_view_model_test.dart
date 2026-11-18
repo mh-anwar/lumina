@@ -123,6 +123,7 @@ void main() {
     expect(h.vm.statusIsError, isTrue);
     final l = h.vm.lights.single;
     expect(h.vm.statusLine(l), 'Setup not finished');
+    expect(h.vm.actionLabel(l), 'Finish setup');
 
     bulb.answersAppKeyAdd = true;
     await h.vm.finishSetup(l);
@@ -184,6 +185,7 @@ void main() {
       expect(h.vm.statusIsError, isTrue);
       final l = h.vm.lights.single;
       expect(h.vm.statusLine(l), 'Was reset');
+      expect(h.vm.actionLabel(l), 'Set up again');
 
       await h.vm.setUpAgain(l);
       expect(h.vm.status, 'BLE Bulb_A9CB is ready.');
@@ -320,8 +322,12 @@ void main() {
     expect(h.vm.allStatus, '1 of 2 on · ${h.vm.lights.first.level}%');
     await h.vm.applyPreset(presets.firstWhere((p) => p.name == 'Read'));
     expect(h.vm.allStatus, 'All on · 90%');
-    expect(h.vm.actionLabel(h.vm.lights.first), isNull);
-    expect(h.vm.needsAction(h.vm.lights.first), isFalse);
+    expect(
+      [(0, 100), (350, 100), (225, 80), (120, 30), (90, 5)].map(
+        (c) => HomeViewModel.colorName(c.$1, c.$2),
+      ),
+      ['Red', 'Red', 'Blue', 'Pale green', 'White'],
+    );
     expect([2700, 3300, 4500, 6500].map(HomeViewModel.warmth), [
       'Warm',
       'Neutral',

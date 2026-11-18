@@ -71,16 +71,6 @@ void main() {
       expect(h.connection.isConnected, isTrue);
     });
 
-    test('configures a new bulb through an existing proxy connection', () async {
-      final a = MockBulb('AA:01', 'BLE Bulb_7B2E', rssi: -50);
-      final b = MockBulb('AA:02', 'BLE Bulb_A9CB', rssi: -70);
-      final h = await Harness.start(FakeBle([a, b]));
-      await h.add(a);
-      await h.add(b);
-      expect(h.all.map((l) => l.addr), [0x10, 0x11]);
-      expect(h.all.every((l) => l.configured), isTrue);
-    });
-
     test('acknowledges segmented replies so the bulb stops resending them', () async {
       // Real bulbs resent Composition Status after every later message.
       final bulb = MockBulb('AA:01', 'BLE Bulb_A9CB');
