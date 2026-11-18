@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/ui/features/activity_log/view_models/activity_log_view_model.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/ui/features/activity_log/view_models/activity_log_view_model.dart';
 
 void main() {
   test('shows the newest entry first and follows the log', () {

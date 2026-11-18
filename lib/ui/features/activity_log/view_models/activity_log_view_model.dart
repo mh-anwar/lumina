@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/domain/models/log_entry.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/domain/models/log_entry.dart';
 
 /// The activity log, newest first.
 class ActivityLogViewModel extends ChangeNotifier {

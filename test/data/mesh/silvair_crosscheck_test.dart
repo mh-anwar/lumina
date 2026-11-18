@@ -6,9 +6,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/messages.dart';
-import 'package:luminar/data/mesh/network.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/messages.dart';
+import 'package:lumina/data/mesh/network.dart';
 
 void main() {
   final v = jsonDecode(

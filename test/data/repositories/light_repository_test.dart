@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/mesh/messages.dart';
-import 'package:luminar/data/repositories/light_repository.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/preset.dart';
+import 'package:lumina/data/mesh/messages.dart';
+import 'package:lumina/data/repositories/light_repository.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/preset.dart';
 
 import '../../support/harness.dart';
 import '../../support/mock_bulb.dart';

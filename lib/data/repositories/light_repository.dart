@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:dart_debounce_throttle/dart_debounce_throttle.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/messages.dart';
-import 'package:luminar/data/repositories/home_repository.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/mesh_proxy_service.dart';
-import 'package:luminar/data/services/timings.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/light_state.dart';
-import 'package:luminar/domain/models/preset.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/messages.dart';
+import 'package:lumina/data/repositories/home_repository.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/mesh_proxy_service.dart';
+import 'package:lumina/data/services/timings.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/light_state.dart';
+import 'package:lumina/domain/models/preset.dart';
 
 /// How [LightRepository.configure] ended.
 enum ConfigureResult {
@@ -90,7 +90,7 @@ class LightRepository extends ChangeNotifier {
     _setState(src, (s) => s.copyWith(on: on, known: true, responding: true));
     if (l.wasReset) {
       // It answers with our keys after all (for example, set up again in
-      // another copy of Luminar).
+      // another copy of Lumina).
       unawaited(_home.updateLight(src, (l) => l.copyWith(wasReset: false)));
     }
     if (level != l.level || kelvin != l.kelvin) {
@@ -101,12 +101,12 @@ class LightRepository extends ChangeNotifier {
 
   // ---------- configuration ----------
 
-  /// Gives the bulb our AppKey, binds it to every model Luminar can drive
+  /// Gives the bulb our AppKey, binds it to every model Lumina can drive
   /// and joins the All lights group.
   Future<ConfigureResult> configure(int addr, {int tries = 3}) async {
     final name = _home.home.lightAt(addr)?.name ?? hex16(addr);
     // Ask the bulb which models it has, then bind the AppKey to each one
-    // Luminar knows how to drive, on the element that hosts it.
+    // Lumina knows how to drive, on the element that hosts it.
     final comp = await _proxy.ask(
       addr,
       Msg.compositionGet(),
@@ -209,7 +209,7 @@ class LightRepository extends ChangeNotifier {
         if (!_proxy.isOpen) return;
         await configure(l.addr);
       }
-      // Lights set up before Luminar used groups.
+      // Lights set up before Lumina used groups.
       for (final l in _ready.where((l) => !l.grouped).toList()) {
         if (!_proxy.isOpen) return;
         await joinGroup(l.addr);

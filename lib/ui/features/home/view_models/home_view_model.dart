@@ -2,23 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:luminar/data/repositories/connection_repository.dart';
-import 'package:luminar/data/repositories/home_repository.dart';
-import 'package:luminar/data/repositories/light_repository.dart';
-import 'package:luminar/data/repositories/scene_repository.dart';
-import 'package:luminar/data/repositories/widget_repository.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/services/provisioning_service.dart';
-import 'package:luminar/domain/models/connection.dart';
-import 'package:luminar/domain/models/home.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/light_state.dart';
-import 'package:luminar/domain/models/nearby_bulb.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/domain/models/widget_action.dart';
-import 'package:luminar/domain/use_cases/add_light_use_case.dart';
-import 'package:luminar/domain/use_cases/connect_use_case.dart';
+import 'package:lumina/data/repositories/connection_repository.dart';
+import 'package:lumina/data/repositories/home_repository.dart';
+import 'package:lumina/data/repositories/light_repository.dart';
+import 'package:lumina/data/repositories/scene_repository.dart';
+import 'package:lumina/data/repositories/widget_repository.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/provisioning_service.dart';
+import 'package:lumina/domain/models/connection.dart';
+import 'package:lumina/domain/models/home.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/light_state.dart';
+import 'package:lumina/domain/models/nearby_bulb.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/domain/models/widget_action.dart';
+import 'package:lumina/domain/use_cases/add_light_use_case.dart';
+import 'package:lumina/domain/use_cases/connect_use_case.dart';
 
 /// State and commands for the home screen: the connection, all lights,
 /// each light, scenes, and backup.
@@ -301,7 +301,7 @@ class HomeViewModel extends ChangeNotifier {
     ProvisioningError.failed =>
       'The bulb stopped setup (error ${e.code ?? '?'}). Reset it and try again.',
     ProvisioningError.unexpected => 'The bulb sent an unexpected reply. Reset it and try again.',
-    ProvisioningError.unsupported => 'This bulb uses a setup method Luminar does not support.',
+    ProvisioningError.unsupported => 'This bulb uses a setup method Lumina does not support.',
     ProvisioningError.securityCheck =>
       'The bulb failed its security check. Reset it and try again.',
   };

@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/main.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/main.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../support/harness.dart';
@@ -44,7 +44,7 @@ Future<HomeViewModel> pumpApp(WidgetTester tester, FakeBle ble, Brightness b) as
       store: MemoryHomeStore(),
       timings: fast,
       widgetService: MemoryHomeWidgetService(),
-      widgetPort: 'luminar.test.screen.${b.name}',
+      widgetPort: 'lumina.test.screen.${b.name}',
     );
     d.providers; // creates every object
     return d;
@@ -52,7 +52,7 @@ Future<HomeViewModel> pumpApp(WidgetTester tester, FakeBle ble, Brightness b) as
   await tester.pumpWidget(
     RepaintBoundary(
       key: const ValueKey('app'),
-      child: MultiProvider(providers: deps.providers, child: const LuminarApp()),
+      child: MultiProvider(providers: deps.providers, child: const LuminaApp()),
     ),
   );
   // Let the home load in the real zone.

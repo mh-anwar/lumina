@@ -1,12 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/domain/models/connection.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/data/repositories/widget_repository.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/domain/models/widget_action.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/domain/models/connection.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/data/repositories/widget_repository.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/domain/models/widget_action.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
 
 import '../../../../support/harness.dart';
 import '../../../../support/mock_bulb.dart';

@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:pointycastle/export.dart';
 
-import 'package:luminar/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/bytes.dart';
 
 // AES primitives and Mesh key derivation (Mesh Profile 3.8.2).
 

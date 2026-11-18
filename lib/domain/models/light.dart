@@ -36,7 +36,7 @@ abstract class Light with _$Light {
     String? bleId,
 
     /// The bulb was seen advertising as a new bulb: it was reset outside
-    /// Luminar and has forgotten the network.
+    /// Lumina and has forgotten the network.
     @Default(false) bool wasReset,
   }) = _Light;
 

@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/repositories/home_repository.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/services/provisioning_service.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/nearby_bulb.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/repositories/home_repository.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/provisioning_service.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/nearby_bulb.dart';
 
 /// Finds unprovisioned bulbs and brings them into our network.
 class ProvisioningRepository {

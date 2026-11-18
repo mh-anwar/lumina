@@ -17,7 +17,7 @@ mixin _$Home {
 
 /// Hex.
  String get netKey;/// Hex.
- String get appKey; int get iv;/// Luminar's own unicast address.
+ String get appKey; int get iv;/// Lumina's own unicast address.
  int get src;/// Sequence numbers below this may already have been used. Never lower it.
  int get seq; int get nextAddr; List<Light> get lights;/// Saved scene names by scene number. The web app's backups omit them.
  Map<int, String> get scenes;
@@ -232,7 +232,7 @@ class _Home extends Home {
 /// Hex.
 @override final  String appKey;
 @override@JsonKey() final  int iv;
-/// Luminar's own unicast address.
+/// Lumina's own unicast address.
 @override@JsonKey() final  int src;
 /// Sequence numbers below this may already have been used. Never lower it.
 @override@JsonKey() final  int seq;

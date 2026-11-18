@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Luminar's palette: evening blue in dark mode, cool grey in light mode,
+/// Lumina's palette: evening blue in dark mode, cool grey in light mode,
 /// and one warm accent ([on]) for anything that is lit or switched on.
 @immutable
 class Palette extends ThemeExtension<Palette> {

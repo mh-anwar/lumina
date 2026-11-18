@@ -21,7 +21,7 @@ mixin _$Light {
  int get level; int get kelvin;/// Models (keys of `Models.bindable`) subscribed to [allLightsGroup].
  Set<String> get groupModels;/// Platform Bluetooth id (MAC on Android), if known. Not in web backups.
  String? get bleId;/// The bulb was seen advertising as a new bulb: it was reset outside
-/// Luminar and has forgotten the network.
+/// Lumina and has forgotten the network.
  bool get wasReset;
 /// Create a copy of Light
 /// with the given fields replaced by the non-null parameter values.
@@ -262,7 +262,7 @@ class _Light extends Light {
 /// Platform Bluetooth id (MAC on Android), if known. Not in web backups.
 @override final  String? bleId;
 /// The bulb was seen advertising as a new bulb: it was reset outside
-/// Luminar and has forgotten the network.
+/// Lumina and has forgotten the network.
 @override@JsonKey() final  bool wasReset;
 
 /// Create a copy of Light

@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/domain/models/home.dart';
-import 'package:luminar/domain/models/light.dart';
+import 'package:lumina/domain/models/home.dart';
+import 'package:lumina/domain/models/light.dart';
 
 void main() {
   const netKey = '00112233445566778899aabbccddeeff';

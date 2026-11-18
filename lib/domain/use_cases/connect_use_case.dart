@@ -1,5 +1,5 @@
-import 'package:luminar/data/repositories/connection_repository.dart';
-import 'package:luminar/data/repositories/light_repository.dart';
+import 'package:lumina/data/repositories/connection_repository.dart';
+import 'package:lumina/data/repositories/light_repository.dart';
 
 /// Connects to the mesh, then brings every light up to date: finishes
 /// interrupted setups, joins older lights to the group and reads states.

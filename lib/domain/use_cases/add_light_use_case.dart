@@ -1,10 +1,10 @@
-import 'package:luminar/data/repositories/connection_repository.dart';
-import 'package:luminar/data/repositories/light_repository.dart';
-import 'package:luminar/data/repositories/provisioning_repository.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/timings.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/nearby_bulb.dart';
+import 'package:lumina/data/repositories/connection_repository.dart';
+import 'package:lumina/data/repositories/light_repository.dart';
+import 'package:lumina/data/repositories/provisioning_repository.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/timings.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/nearby_bulb.dart';
 
 enum AddLightStep {
   /// Provisioning, key exchange (1 of 3).

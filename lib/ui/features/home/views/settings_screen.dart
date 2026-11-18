@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/domain/models/connection.dart';
-import 'package:luminar/ui/features/activity_log/views/log_screen.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
-import 'package:luminar/ui/core/theme.dart';
-import 'package:luminar/ui/core/widgets.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/domain/models/connection.dart';
+import 'package:lumina/ui/features/activity_log/views/log_screen.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/ui/core/theme.dart';
+import 'package:lumina/ui/core/widgets.dart';
 
 /// The connection, backups, the activity log, and starting over.
 class SettingsScreen extends StatelessWidget {
@@ -153,7 +153,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () =>
-                SharePlus.instance.share(ShareParams(text: code, subject: 'Luminar backup code')),
+                SharePlus.instance.share(ShareParams(text: code, subject: 'Lumina backup code')),
             child: const Text('Share'),
           ),
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),

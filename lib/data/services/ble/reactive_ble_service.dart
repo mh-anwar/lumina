@@ -5,15 +5,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:luminar/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
 
 /// Android reports discovered UUIDs in 128-bit form; compare expanded forms,
 /// as flutter_reactive_ble does internally.
 bool sameUuid(Uuid a, Uuid b) => a.expanded == b.expanded;
 
-/// Build with `--dart-define=LUMINAR_SCAN_DIAG=true` to scan without a
+/// Build with `--dart-define=LUMINA_SCAN_DIAG=true` to scan without a
 /// service filter and print every advertisement (for debugging bulbs).
-const _scanDiag = bool.fromEnvironment('LUMINAR_SCAN_DIAG');
+const _scanDiag = bool.fromEnvironment('LUMINA_SCAN_DIAG');
 
 final _provService = Uuid.parse('1827');
 final _proxyService = Uuid.parse('1828');
@@ -44,12 +44,12 @@ class ReactiveBleService implements BleService {
       final r = interactive ? await wanted.request() : {for (final p in wanted) p: await p.status};
       if (r.values.any((s) => s.isPermanentlyDenied)) {
         throw BluetoothUnavailable(
-          'Luminar needs the Nearby devices permission. Allow it in Settings > Apps > Luminar > Permissions.',
+          'Lumina needs the Nearby devices permission. Allow it in Settings > Apps > Lumina > Permissions.',
         );
       }
       if (r.values.any((s) => !s.isGranted)) {
         throw BluetoothUnavailable(
-          'Luminar needs the Nearby devices permission to find your lights.',
+          'Lumina needs the Nearby devices permission to find your lights.',
         );
       }
     }
@@ -66,11 +66,11 @@ class ReactiveBleService implements BleService {
         throw BluetoothUnavailable('Bluetooth is off. Turn it on and try again.');
       case BleStatus.locationServicesDisabled:
         throw BluetoothUnavailable(
-          'Turn on Location so Luminar can scan for lights (Android 11 and lower).',
+          'Turn on Location so Lumina can scan for lights (Android 11 and lower).',
         );
       case BleStatus.unauthorized:
         throw BluetoothUnavailable(
-          'Luminar is not allowed to use Bluetooth. Allow it in Settings.',
+          'Lumina is not allowed to use Bluetooth. Allow it in Settings.',
         );
       case BleStatus.unsupported:
         throw BluetoothUnavailable('This phone does not support Bluetooth Low Energy.');

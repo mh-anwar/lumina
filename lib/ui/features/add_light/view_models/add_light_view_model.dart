@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:luminar/data/repositories/provisioning_repository.dart';
-import 'package:luminar/domain/models/nearby_bulb.dart';
+import 'package:lumina/data/repositories/provisioning_repository.dart';
+import 'package:lumina/domain/models/nearby_bulb.dart';
 
 /// Scans for bulbs that are ready to add.
 class AddLightViewModel extends ChangeNotifier {

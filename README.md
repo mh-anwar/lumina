@@ -1,24 +1,24 @@
-# Luminar
+# Lumina
 
 [![CI](https://github.com/snwagbata/luminar/actions/workflows/ci.yml/badge.svg)](https://github.com/snwagbata/luminar/actions/workflows/ci.yml)
 
-Luminar is a Flutter app that sets up and controls Sengled Dual Mode Bluetooth Mesh bulbs without Sengled's apps or nRF Mesh. It creates its own mesh network, adds bulbs to it, and controls on/off, brightness, color temperature, and scenes.
+Lumina is a fork of [Luminar](https://github.com/snwagbata/luminar) by snwagbata, with a redesigned interface. It's a Flutter app that sets up and controls Sengled Dual Mode Bluetooth Mesh bulbs without Sengled's apps or nRF Mesh. It creates its own mesh network, adds bulbs to it, and controls on/off, brightness, color temperature, and scenes.
 
-Luminar is tested on Android. It also builds for iOS, with the Bluetooth permission text, app icon, and splash screen, but the iOS app hasn't been run on an iPhone yet. Home-screen widgets and app shortcuts are Android-only.
+Lumina is tested on Android. It also builds for iOS, with the Bluetooth permission text, app icon, and splash screen, but the iOS app hasn't been run on an iPhone yet. Home-screen widgets and app shortcuts are Android-only.
 
 <p align="center">
-  <img src="docs/screenshots/home-light.png" width="240" alt="The home screen: a lamp button showing 2 of 3 lights on, brightness and warmth sliders, presets, and saved scenes.">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/screenshots/lights-dark.png" width="240" alt="The light list in dark mode, with the desk lamp opened to show its own sliders and actions.">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/screenshots/add-light-light.png" width="240" alt="The Add a light sheet, listing two reset bulbs ready to add with their signal strength.">
+  <img src="docs/screenshots/home-light.png" width="240" alt="The home screen: an All lights tile showing 2 of 3 on, a row of presets and saved scenes, and a tile for each light.">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/screenshots/lights-dark.png" width="240" alt="The desk lamp's controls in dark mode: brightness and warmth sliders, the power-on setting, and Remove light.">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/screenshots/add-light-light.png" width="240" alt="The Add a light sheet, listing two reset bulbs ready to add with their signal strength.">
 </p>
 
 ## Features
 
-- **Setup without other apps:** Luminar adds a reset bulb to its own network in about 10 seconds.
-- **All lights at once:** the lamp button, sliders, presets, and scenes reach every bulb in one group message, so they change together.
-- **Each light on its own:** on/off, brightness, warmth, rename, remove, and a power-on default.
+- **Setup without other apps:** Lumina adds a reset bulb to its own network in about 10 seconds.
+- **All lights at once:** the All lights tile, its sliders, presets, and scenes reach every bulb in one group message, so they change together.
+- **Each light on its own:** tap a tile to switch it and drag across it to dim it. Its tune button opens warmth, rename, remove, and the power-on setting.
 - **Scenes:** save the current look of every light and bring it back with one tap.
 - **Reset detection:** a bulb reset with its light switch shows **Was reset**, and **Set up again** keeps its name and place in the list.
 - **Android widgets and app shortcuts:** switch lights or pick a preset from the home screen without opening the app.
-- **Fast reconnect:** Luminar connects to your lights in about 4 seconds when it opens.
+- **Fast reconnect:** Lumina connects to your lights in about 4 seconds when it opens.
 - **Backups:** a backup code restores your lights on another phone.
 
 ## Install on an Android phone
@@ -33,26 +33,26 @@ Luminar is tested on Android. It also builds for iOS, with the Bluetooth permiss
 
    The APK is signed with the debug key, which is fine for installing it on your own phone.
 
-3. Open Luminar and allow **Nearby devices** when asked.
+3. Open Lumina and allow **Nearby devices** when asked.
 
 ## Add a bulb
 
 1. Reset the bulb: with it on, turn it off and on five times quickly until it flashes.
-2. Tap **Add a light** and pick the bulb (`BLE Bulb_XXXX`). The bulb blinks while Luminar sets it up.
+2. Tap **Add a light** and pick the bulb (`BLE Bulb_XXXX`). The bulb blinks while Lumina sets it up.
 
-A bulb that's still in another network, such as one set up with nRF Mesh, doesn't appear under **Add a light**. If Luminar connects to one, it tells you to reset it.
+A bulb that's still in another network, such as one set up with nRF Mesh, doesn't appear under **Add a light**. If Lumina connects to one, it tells you to reset it.
 
 ### Bulbs reset outside the app
 
-Luminar recognizes your bulbs by their Bluetooth address. When one of them advertises as a new bulb, Luminar marks its light **Was reset**. Tap **Set up again** to add it back with the same name and place in the list. **Add a light** also labels a reset bulb with the light it used to be.
+Lumina recognizes your bulbs by their Bluetooth address. When one of them advertises as a new bulb, Lumina marks its light **Was reset**. Tap **Set up again** to add it back with the same name and place in the list. **Add a light** also labels a reset bulb with the light it used to be.
 
 ## Debugging with real bulbs
 
-**Activity log** (at the bottom of the main screen) shows every provisioning and network PDU in both directions, plus decoded access messages. Use **Share** to send it somewhere. The bulb's Composition Data is logged when it's configured.
+**Activity log** (in **Settings**) shows every provisioning and network PDU in both directions, plus decoded access messages. Use **Share** to send it somewhere. The bulb's Composition Data is logged when it's configured.
 
 ## Widgets and app shortcuts (Android)
 
-Luminar offers two home-screen widgets:
+Lumina offers two home-screen widgets:
 
 - **Lights on/off** (1×1) toggles every light.
 - **Lights and presets** (4×1) adds Relax, Read, Daylight, and Night.
@@ -62,16 +62,16 @@ Long-press the app icon for the same actions as app shortcuts. You can drag a sh
 Widgets and shortcuts run their action without opening the app.
 
 A tap runs `lib/widget_entry.dart` in a background isolate (`home_widget`):
-- If Luminar is running, the tap is handed to it over the isolate name server and uses its open connection. That takes about 0.1 s.
+- If Lumina is running, the tap is handed to it over the isolate name server and uses its open connection. That takes about 0.1 s.
 - Otherwise the isolate connects, sends one group message and disconnects. That takes about 5–6 s, most of it Android starting the process and opening the Bluetooth link.
 
 The widget shows **…** while it works and **Retry** if no light was in range. The native side is `LuminarWidgets.kt` and `ShortcutActivity.kt` in `android/app/src/main/kotlin/app/luminar/luminar/`. Shortcuts are declared in `android/app/src/main/res/xml/shortcuts.xml`.
 
-Force-stopping Luminar in Android settings turns its widgets off until you open the app again. That's an Android rule for force-stopped apps.
+Force-stopping Lumina in Android settings turns its widgets off until you open the app again. That's an Android rule for force-stopped apps.
 
 ## Backups
 
-**Back up lights** produces a `LAMPLIGHT1:` code. Luminar also reads backup codes from the Lamplight web app. Restoring adds 100,000 to the sequence number so bulbs don't reject messages as replays.
+**Back up lights** (in **Settings**) produces a `LAMPLIGHT1:` code. Lumina also reads backup codes from the Lamplight web app. Restoring adds 100,000 to the sequence number so bulbs don't reject messages as replays.
 
 ## Architecture
 
@@ -94,7 +94,7 @@ After changing a `freezed` model, regenerate with `dart run build_runner build -
 
 ### Supported models
 
-At setup, Luminar reads each bulb's Composition Data and binds its AppKey to every model it supports:
+At setup, Lumina reads each bulb's Composition Data and binds its AppKey to every model it supports:
 
 - Generic OnOff
 - Light Lightness
@@ -153,8 +153,8 @@ To run it on an iPhone, open `ios/Runner.xcworkspace` in Xcode and choose your t
 
 ## License
 
-Luminar is released under the [MIT License](LICENSE).
+Lumina is released under the [MIT License](LICENSE).
 
 The bundled Figtree and Bricolage Grotesque fonts are licensed under the SIL Open Font License; their license files are in `google_fonts/`. The bulb and power icons are from Material Icons, licensed under the Apache License 2.0.
 
-Luminar is an independent project. It isn't affiliated with or endorsed by Sengled. Sengled is a trademark of its owner, and the name is used here only to say which bulbs Luminar works with.
+Lumina is an independent project. It isn't affiliated with or endorsed by Sengled. Sengled is a trademark of its owner, and the name is used here only to say which bulbs Lumina works with.

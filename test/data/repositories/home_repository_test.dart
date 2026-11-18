@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/domain/models/home.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/domain/models/home.dart';
 
 import '../../support/harness.dart';
 import '../../support/mock_bulb.dart';

@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/ui/core/theme.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/ui/core/theme.dart';
 
 /// A labeled slider with a gradient track.
 class GradientSlider extends StatelessWidget {

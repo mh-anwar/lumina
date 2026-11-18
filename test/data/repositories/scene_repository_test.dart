@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/repositories/light_repository.dart';
+import 'package:lumina/data/repositories/light_repository.dart';
 
 import '../../support/harness.dart';
 import '../../support/mock_bulb.dart';

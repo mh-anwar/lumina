@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import 'package:luminar/domain/models/connection.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/ui/features/add_light/views/add_light_sheet.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
-import 'package:luminar/ui/features/home/views/light_sheet.dart';
-import 'package:luminar/ui/features/home/views/settings_screen.dart';
-import 'package:luminar/ui/core/theme.dart';
-import 'package:luminar/ui/core/widgets.dart';
+import 'package:lumina/domain/models/connection.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/ui/features/add_light/views/add_light_sheet.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/ui/features/home/views/light_sheet.dart';
+import 'package:lumina/ui/features/home/views/settings_screen.dart';
+import 'package:lumina/ui/core/theme.dart';
+import 'package:lumina/ui/core/widgets.dart';
 
 /// The home screen: all lights, scenes, and a tile for each light.
 class HomeScreen extends StatefulWidget {

@@ -7,12 +7,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:provider/provider.dart';
 
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/data/services/ble/reactive_ble_service.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/ui/core/theme.dart';
-import 'package:luminar/ui/features/home/views/home_screen.dart';
-import 'package:luminar/widget_entry.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/data/services/ble/reactive_ble_service.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/ui/core/theme.dart';
+import 'package:lumina/ui/features/home/views/home_screen.dart';
+import 'package:lumina/widget_entry.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,16 +25,16 @@ void main() {
   });
   unawaited(HomeWidget.registerInteractivityCallback(widgetTapped));
   final deps = Dependencies(ble: ReactiveBleService(), store: SecureHomeStore());
-  runApp(MultiProvider(providers: deps.providers, child: const LuminarApp()));
+  runApp(MultiProvider(providers: deps.providers, child: const LuminaApp()));
 }
 
-class LuminarApp extends StatelessWidget {
-  const LuminarApp({super.key});
+class LuminaApp extends StatelessWidget {
+  const LuminaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Luminar',
+      title: 'Lumina',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/crypto.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/crypto.dart';
 
 /// Keys derived from the network's NetKey and AppKey.
 class NetKeys {

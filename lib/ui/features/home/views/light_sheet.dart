@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
-import 'package:luminar/ui/core/theme.dart';
-import 'package:luminar/ui/core/widgets.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/ui/core/theme.dart';
+import 'package:lumina/ui/core/widgets.dart';
 
 /// Opens the controls for one light, or for all lights when [addr] is null.
 Future<void> showLightSheet(BuildContext context, HomeViewModel viewModel, {int? addr}) {

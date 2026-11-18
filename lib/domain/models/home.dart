@@ -6,7 +6,7 @@ import 'light.dart';
 
 part 'home.freezed.dart';
 
-/// The mesh network Luminar owns: its keys, addresses and lights.
+/// The mesh network Lumina owns: its keys, addresses and lights.
 @freezed
 abstract class Home with _$Home {
   const Home._();
@@ -19,7 +19,7 @@ abstract class Home with _$Home {
     required String appKey,
     @Default(0) int iv,
 
-    /// Luminar's own unicast address.
+    /// Lumina's own unicast address.
     @Default(0x0001) int src,
 
     /// Sequence numbers below this may already have been used. Never lower it.

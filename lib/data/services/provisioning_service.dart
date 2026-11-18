@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/crypto.dart';
-import 'package:luminar/data/mesh/provisioning.dart';
-import 'package:luminar/data/mesh/proxy.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/services/timings.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/crypto.dart';
+import 'package:lumina/data/mesh/provisioning.dart';
+import 'package:lumina/data/mesh/proxy.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/timings.dart';
 
 /// A bulb that joined our network.
 class ProvisionedNode {
@@ -29,7 +29,7 @@ enum ProvisioningError {
   /// The bulb sent a reply out of order.
   unexpected,
 
-  /// The bulb needs an authentication method Luminar does not support.
+  /// The bulb needs an authentication method Lumina does not support.
   unsupported,
 
   /// The bulb's confirmation did not match: wrong device or tampering.

@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/services/ble/reactive_ble_service.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/ble/reactive_ble_service.dart';
 
 /// Stands in for the platform plugin: scanForDevices emits whatever the test
 /// pushes into [adverts].

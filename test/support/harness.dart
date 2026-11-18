@@ -1,10 +1,10 @@
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/data/services/timings.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/nearby_bulb.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/data/services/timings.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/nearby_bulb.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
 
 import 'mock_bulb.dart';
 
@@ -30,7 +30,7 @@ class Harness extends Dependencies {
         store: store ?? MemoryHomeStore(),
         timings: timings,
         widgetService: MemoryHomeWidgetService(),
-        widgetPort: 'luminar.test.${_harnesses++}',
+        widgetPort: 'lumina.test.${_harnesses++}',
       );
 
   static var _harnesses = 0;

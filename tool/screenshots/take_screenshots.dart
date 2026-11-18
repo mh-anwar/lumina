@@ -13,11 +13,11 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/main.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/main.dart';
 import 'package:provider/provider.dart';
 
 import '../../test/support/harness.dart';
@@ -84,7 +84,7 @@ void main() {
           store: MemoryHomeStore(),
           timings: fast,
           widgetService: MemoryHomeWidgetService(),
-          widgetPort: 'luminar.screenshots.$theme',
+          widgetPort: 'lumina.screenshots.$theme',
         );
         d.providers; // creates every object in the real zone
         final vm = d.homeViewModel;
@@ -113,7 +113,7 @@ void main() {
       await tester.pumpWidget(
         RepaintBoundary(
           key: const ValueKey('app'),
-          child: MultiProvider(providers: deps.providers, child: const LuminarApp()),
+          child: MultiProvider(providers: deps.providers, child: const LuminaApp()),
         ),
       );
       await _wait(tester);
