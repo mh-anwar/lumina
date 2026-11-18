@@ -13,11 +13,7 @@ class Preset {
   static Preset? fromJson(Object? j) => switch (j) {
     {'name': final String name, 'level': final num level, 'kelvin': final num kelvin}
         when name.trim().isNotEmpty =>
-      Preset(
-        name.trim(),
-        level.round().clamp(1, 100),
-        kelvin.round().clamp(minKelvin, maxKelvin),
-      ),
+      Preset(name.trim(), level.round().clamp(1, 100), kelvin.round().clamp(minKelvin, maxKelvin)),
     _ => null,
   };
 
