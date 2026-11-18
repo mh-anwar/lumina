@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:lumina/config/dependencies.dart';
-import 'package:lumina/domain/models/connection.dart';
 import 'package:lumina/ui/features/activity_log/views/log_screen.dart';
 import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
 import 'package:lumina/ui/core/theme.dart';
@@ -42,14 +41,6 @@ class SettingsScreen extends StatelessWidget {
                         leading: const Icon(Icons.bluetooth_rounded),
                         title: Text(c.connectionLabel),
                         subtitle: Text('$n light${n == 1 ? '' : 's'} on this phone'),
-                        trailing: c.lights.isEmpty
-                            ? null
-                            : TextButton(
-                                onPressed: c.connection == Connection.connecting || c.busy
-                                    ? null
-                                    : c.toggleConnection,
-                                child: Text(c.isConnected ? 'Disconnect' : 'Connect'),
-                              ),
                       ),
                     ],
                   ),
@@ -147,7 +138,10 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: code));
               if (ctx.mounted) Navigator.pop(ctx);
-              c.backupCopied();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(const SnackBar(content: Text(HomeViewModel.backupCopied)));
+              }
             },
             child: const Text('Copy'),
           ),
@@ -178,32 +172,57 @@ class SettingsScreen extends StatelessWidget {
 
 /// Asks for a backup code and restores it. Returns true if it was restored.
 Future<bool> showRestoreDialog(BuildContext context, HomeViewModel viewModel) async {
-  final text = TextEditingController();
+  // Pre-fill a backup code that is already on the clipboard.
+  String? clip;
+  try {
+    clip = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
+  } catch (_) {
+    clip = null;
+  }
+  if (!context.mounted) return false;
+  final text = TextEditingController(
+    text: HomeViewModel.looksLikeBackupCode(clip) ? clip!.trim() : '',
+  );
+  String? error;
   final ok = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text('Restore from backup', style: display(20)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('Paste your backup code. This replaces the lights on this phone.'),
-          const SizedBox(height: 12),
-          TextField(
-            controller: text,
-            minLines: 3,
-            maxLines: 6,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'LAMPLIGHT1:…',
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: Text('Restore from backup', style: display(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Paste your backup code. This replaces the lights on this phone.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: text,
+              minLines: 3,
+              maxLines: 6,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: 'LAMPLIGHT1:…',
+                errorText: error,
+                errorMaxLines: 3,
+              ),
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
             ),
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              final invalid = HomeViewModel.checkBackupCode(text.text);
+              if (invalid == null) {
+                Navigator.pop(ctx, true);
+              } else {
+                setState(() => error = invalid);
+              }
+            },
+            child: const Text('Restore'),
           ),
         ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Restore')),
-      ],
     ),
   );
   if (ok != true) return false;

@@ -126,5 +126,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
     await tester.runAsync(vm.disconnect);
+    // Let the last message clear itself, so no timer is left pending.
+    await tester.pump(vm.infoLinger);
   }, timeout: const Timeout(Duration(seconds: 40)));
 }

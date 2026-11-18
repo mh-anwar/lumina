@@ -46,6 +46,9 @@ class LightRepository extends ChangeNotifier {
   final _replies = <int, int>{};
   final _queryTimers = <Timer>{};
 
+  /// Lights marked not responding that a command just asked again.
+  final _rechecking = <int>{};
+
   static int toLightness(int pct) => (pct.clamp(1, 100) / 100 * 65535).round();
 
   List<Light> get _ready => _home.home.ready;
@@ -87,6 +90,7 @@ class LightRepository extends ChangeNotifier {
     final k = st.kelvin;
     if (k != null && k >= 800 && k <= 20000) kelvin = k.clamp(minKelvin, maxKelvin);
     _replies[src] = (_replies[src] ?? 0) + 1;
+    _rechecking.remove(src);
     _setState(src, (s) => s.copyWith(on: on, known: true, responding: true));
     if (l.wasReset) {
       // It answers with our keys after all (for example, set up again in
@@ -240,6 +244,7 @@ class LightRepository extends ChangeNotifier {
     late final Timer timer;
     timer = Timer(timings.configReply, () {
       _queryTimers.remove(timer);
+      _rechecking.remove(addr);
       if ((_replies[addr] ?? 0) == heard && _proxy.isOpen) {
         _setState(addr, (s) => s.copyWith(responding: false));
         notifyListeners();
@@ -299,6 +304,14 @@ class LightRepository extends ChangeNotifier {
     _setState(addr, (s) => s.copyWith(on: on));
     notifyListeners();
     await _safe(() => _proxy.send(addr, Msg.onOffSet(on, _proxy.nextTid())));
+    await _recheck(addr);
+  }
+
+  /// Asks a light marked not responding for its state again after a
+  /// command, so the mark clears once it answers. One query at a time.
+  Future<void> _recheck(int addr) async {
+    if (stateOf(addr).responding || !_rechecking.add(addr)) return;
+    await queryState(addr);
   }
 
   /// Turns every light off if any is on, otherwise on.
@@ -335,7 +348,8 @@ class LightRepository extends ChangeNotifier {
   );
 
   /// Updates one light's brightness, temperature or color (from a slider).
-  void setLevel(int addr, {int? level, int? kelvin, int? hue, int? saturation}) {
+  /// With [send] false only the light's state changes.
+  void setLevel(int addr, {int? level, int? kelvin, int? hue, int? saturation, bool send = true}) {
     unawaited(
       _home.updateLight(
         addr,
@@ -344,13 +358,20 @@ class LightRepository extends ChangeNotifier {
     );
     _setState(addr, (s) => s.copyWith(on: true));
     notifyListeners();
+    if (send) _sendLevel(addr);
+  }
+
+  /// Sends the light's current brightness and look, throttled.
+  void _sendLevel(int addr) {
     _perLight
         .putIfAbsent(addr, () => ThrottleDebouncer(duration: timings.throttle))
         .call(
           () => _safe(() async {
             final l = _home.home.lightAt(addr);
             final m = l == null ? null : _levelMsg(l, _proxy.nextTid());
-            if (m != null) await _proxy.send(addr, m.$2);
+            if (m == null) return;
+            await _proxy.send(addr, m.$2);
+            await _recheck(addr);
           }),
         );
   }
@@ -371,9 +392,10 @@ class LightRepository extends ChangeNotifier {
   }
 
   /// Updates every light's brightness and/or temperature (from a slider).
-  void setAll({int? level, int? kelvin}) {
+  /// With [send] false only the lights' state changes.
+  void setAll({int? level, int? kelvin, bool send = true}) {
     unawaited(_setAllLevels(level, kelvin));
-    _allThrottle.call(_sendLevelAll);
+    if (send) _allThrottle.call(_sendLevelAll);
   }
 
   Future<void> applyPreset(Preset p) async {
@@ -389,22 +411,31 @@ class LightRepository extends ChangeNotifier {
     await _home.updateLight(addr, (l) => l.copyWith(name: n));
   }
 
-  /// Resets the bulb (if connected) and forgets it.
-  Future<void> remove(int addr) async {
-    if (_proxy.isOpen) {
-      try {
-        await _proxy.ask(
-          addr,
-          Msg.nodeReset(),
-          (s, a) => s == addr && opcodeOf(a) == Op.nodeResetStatus,
-          device: true,
-          tries: 2,
-          timeout: const Duration(seconds: 2),
-        );
-      } catch (e) {
-        _log.add('Reset failed: $e');
-      }
+  /// Resets the bulb and forgets it. Returns false, and keeps the light, if
+  /// the bulb did not acknowledge the reset (or there is no connection);
+  /// [forget] then removes it anyway.
+  Future<bool> remove(int addr) async {
+    if (!_proxy.isOpen) return false;
+    Uint8List? reply;
+    try {
+      reply = await _proxy.ask(
+        addr,
+        Msg.nodeReset(),
+        (s, a) => s == addr && opcodeOf(a) == Op.nodeResetStatus,
+        device: true,
+        tries: 2,
+        timeout: timings.configReply,
+      );
+    } catch (e) {
+      _log.add('Reset failed: $e');
     }
+    if (reply == null) return false;
+    await forget(addr);
+    return true;
+  }
+
+  /// Forgets the light without resetting the bulb.
+  Future<void> forget(int addr) async {
     _states.remove(addr);
     await _home.removeLight(addr);
   }

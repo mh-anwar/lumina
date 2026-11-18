@@ -6,13 +6,18 @@ import 'package:lumina/ui/core/widgets.dart';
 
 /// Makes a new scene: one brightness and white for every light (a preset),
 /// or each light as it is now (a scene stored on the bulbs).
+/// The lights follow the sliders while the sheet is open, and go back to how
+/// they were unless a preset is saved.
 Future<void> showNewSceneSheet(BuildContext context, HomeViewModel viewModel) async {
+  viewModel.beginNewScene();
+  // false: a preset was saved; true: save each light instead; null: closed.
   final eachLight = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (_) => _NewSceneSheet(viewModel: viewModel),
   );
+  await viewModel.endNewScene(saved: eachLight == false);
   if (eachLight == true && context.mounted) await _saveEachLight(context, viewModel);
 }
 
@@ -26,8 +31,11 @@ class _NewSceneSheet extends StatefulWidget {
 
 class _NewSceneSheetState extends State<_NewSceneSheet> {
   HomeViewModel get c => widget.viewModel;
-  late final _name = TextEditingController(text: 'My scene ${c.customPresets.length + 1}');
+  late final _name = TextEditingController(text: c.nextPresetName);
   late int _level = c.allLevel, _kelvin = c.allKelvin;
+
+  /// Why the last Save didn't work, such as a name already in use.
+  String? _error;
 
   @override
   void dispose() {
@@ -46,8 +54,12 @@ class _NewSceneSheetState extends State<_NewSceneSheet> {
   }
 
   Future<void> _save() async {
-    if (await c.savePreset(_name.text, level: _level, kelvin: _kelvin) && mounted) {
+    final error = await c.savePreset(_name.text, level: _level, kelvin: _kelvin);
+    if (!mounted) return;
+    if (error == null) {
       Navigator.pop(context, false);
+    } else {
+      setState(() => _error = error);
     }
   }
 
@@ -95,10 +107,10 @@ class _NewSceneSheetState extends State<_NewSceneSheet> {
                   const SizedBox(height: 4),
                   WhiteToneSwatches(kelvin: _kelvin, onPick: _setKelvin),
                 ],
-                if (c.statusIsError && c.status.isNotEmpty)
+                if (_error case final error?)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(c.status, style: TextStyle(color: p.danger)),
+                    child: Text(error, style: TextStyle(color: p.danger)),
                   ),
                 const SizedBox(height: 16),
                 FilledButton(onPressed: _save, child: const Text('Save scene')),
@@ -128,7 +140,7 @@ class _NewSceneSheetState extends State<_NewSceneSheet> {
 
 /// Names and saves a scene from each light's current look.
 Future<void> _saveEachLight(BuildContext context, HomeViewModel c) async {
-  final name = TextEditingController(text: 'Scene ${c.scenes.length + 1}');
+  final name = TextEditingController(text: c.nextSceneName);
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
