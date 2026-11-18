@@ -5,6 +5,8 @@ State of Lumina for the next agent, as of `main` at `48f378a`. Read CLAUDE.md fi
 ## CI status
 The last runs on `main` were cancelled by newer pushes or hung before the hang fix. `48f378a` (the hang fix) is the first run expected to pass end to end. Check it with `gh run list -R mh-anwar/lumina --branch main`. Locally, `flutter analyze` is clean, and the formerly hanging tests pass in about 4 s.
 
+**Known failing test on `main`:** `home_view_model_test.dart`, "remove, scenes, backup and forgetting all lights say what happened". After restoring a backup whose bulb was removed, it expects a status starting "No lights found" but gets "… was reset". `ux-viewmodel` already updates this expectation; otherwise, change it on `main`. The `48f378a` run had failing tests before a later push cancelled it.
+
 ## How to work here
 
 - **Every change gets a PR**, squash-merged right after it's opened.
