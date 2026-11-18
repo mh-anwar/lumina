@@ -37,7 +37,7 @@ class MockBulb {
   /// Light HSL hue and saturation (0–65535), for bulbs with [Models.hsl].
   int hue = 0, saturation = 0;
 
-  /// The page number in Composition Data Status. Bulb E5AC's firmware
+  /// The page number in Composition Data Status. Some Sengled color firmware
   /// answers a page 0 request with page 0's data under another number.
   int compositionPage = 0;
 
