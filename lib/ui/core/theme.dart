@@ -78,6 +78,7 @@ ThemeData buildTheme(Brightness b) {
       onSurface: p.text,
       primary: p.text,
       onPrimary: p.bg,
+      onSurfaceVariant: p.muted,
       error: p.danger,
       outline: p.line,
     ),
@@ -91,6 +92,8 @@ ThemeData buildTheme(Brightness b) {
     dialogTheme: DialogThemeData(backgroundColor: p.surface),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: p.bg),
     dividerColor: p.line,
+    iconTheme: IconThemeData(color: p.text),
+    listTileTheme: ListTileThemeData(iconColor: p.muted, textColor: p.text),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: p.text,
