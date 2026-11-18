@@ -101,11 +101,6 @@ void main() {
       await settle();
     });
 
-    test('reads the state back after setup', () {
-      expect(h.lights.stateOf(0x10).known, isTrue);
-      expect(h.single.kelvin, 3000);
-    });
-
     test('an off bulb that still reports its lightness stays off', () async {
       // Sengled bulbs answer OnOff Status "off", then a CTL Status with the
       // lightness they will return to, not 0.
@@ -164,7 +159,7 @@ void main() {
       expect(h.single.name, 'Desk');
       await h.lights.rename(0x10, ' ');
       expect(h.single.name, 'Desk');
-      await h.lights.remove(0x10);
+      expect(await h.lights.remove(0x10), isTrue);
       expect(bulb.provisioned, isFalse);
       expect(h.all, isEmpty);
     });

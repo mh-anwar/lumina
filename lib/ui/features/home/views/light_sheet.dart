@@ -34,6 +34,9 @@ class _LightSheetState extends State<_LightSheet> {
   String? _note;
   bool _noteIsError = false;
 
+  /// Waiting for the bulb to answer Remove.
+  bool _removing = false;
+
   Light? get _light {
     final addr = widget.addr;
     return addr == null ? null : c.lights.where((l) => l.addr == addr).firstOrNull;
@@ -52,6 +55,7 @@ class _LightSheetState extends State<_LightSheet> {
     final on = l == null ? c.onCount > 0 : c.stateOf(l).on;
     final dimmable = l == null ? c.ready.isNotEmpty : l.usable && (l.hasLightness || l.hasCtl);
     final note = _note;
+    final action = l == null ? null : c.actionLabel(l);
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
@@ -84,11 +88,12 @@ class _LightSheetState extends State<_LightSheet> {
                   Switch(value: on, onChanged: (v) => l == null ? c.toggleAll() : c.setPower(l, v)),
               ],
             ),
-            if (l != null && !usable) ...[
+            if (l != null && action != null) ...[
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: c.busy ? null : () => l.wasReset ? c.setUpAgain(l) : c.finishSetup(l),
-                child: Text(c.actionLabel(l) ?? ''),
+                // Waits for a connect under way rather than being turned off.
+                onPressed: () => l.wasReset ? c.setUpAgain(l) : c.finishSetup(l),
+                child: Text(action),
               ),
             ],
             if (dimmable) ...[
@@ -169,7 +174,7 @@ class _LightSheetState extends State<_LightSheet> {
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
-                  onPressed: () => _remove(context, l),
+                  onPressed: _removing ? null : () => _remove(context, l),
                   style: TextButton.styleFrom(foregroundColor: p.danger),
                   icon: const Icon(Icons.delete_outline_rounded),
                   label: const Text('Remove light'),
@@ -225,12 +230,33 @@ class _LightSheetState extends State<_LightSheet> {
     final ok = await confirm(
       context,
       'Remove ${l.name}?',
-      c.isConnected ? 'The bulb will be reset so it can be added again later.' : 'You are not connected, so the bulb keeps its setup. Reset it afterwards (five quick off/on cycles) if you want to add it again.',
+      'The bulb will be reset so it can be added again later.',
       action: 'Remove',
       danger: true,
     );
-    if (!ok) return;
-    if (context.mounted) Navigator.pop(context);
-    await c.remove(l);
+    if (!ok || !context.mounted) return;
+    setState(() => _removing = true);
+    var removed = await c.remove(l);
+    if (!context.mounted) return;
+    if (!removed) {
+      // The bulb didn't answer, so it keeps its setup until reset by hand.
+      final anyway = await confirm(
+        context,
+        'Remove ${l.name}?',
+        c.removeUnanswered(l),
+        action: 'Remove anyway',
+        danger: true,
+      );
+      if (anyway) {
+        await c.removeAnyway(l);
+        removed = true;
+      }
+      if (!context.mounted) return;
+    }
+    if (removed) {
+      Navigator.pop(context);
+    } else if (mounted) {
+      setState(() => _removing = false);
+    }
   }
 }

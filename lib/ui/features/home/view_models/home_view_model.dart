@@ -20,6 +20,9 @@ import 'package:lumina/domain/models/widget_action.dart';
 import 'package:lumina/domain/use_cases/add_light_use_case.dart';
 import 'package:lumina/domain/use_cases/connect_use_case.dart';
 
+/// A slider change: brightness, white temperature, or color.
+typedef _Look = ({int? level, int? kelvin, int? hue, int? saturation});
+
 /// State and commands for the home screen: the connection, all lights,
 /// each light, scenes, and backup.
 class HomeViewModel extends ChangeNotifier {
@@ -32,6 +35,7 @@ class HomeViewModel extends ChangeNotifier {
     required this._addLight,
     required this._widgets,
     required this._log,
+    this.infoLinger = const Duration(seconds: 4),
   }) {
     for (final l in [_home, _connection, _lights]) {
       l.addListener(notifyListeners);
@@ -51,21 +55,44 @@ class HomeViewModel extends ChangeNotifier {
   late final StreamSubscription<void> _droppedSub;
   StreamSubscription<WidgetRequest>? _widgetSub;
 
+  /// How long a message that is not an error stays under the title. A
+  /// reading time for people, not a radio timeout, so it is not in Timings.
+  final Duration infoLinger;
+
   // ---------- state ----------
 
   String _status = '';
   bool _statusIsError = false;
-  bool _busy = false;
+  Timer? _statusTimer;
+
+  /// The connect under way, which commands and adds wait for.
+  Future<void>? _connecting;
+
+  /// The light being added, which connects and other adds wait for.
+  Future<bool>? _adding;
+
+  /// The last connect ended without a connection, and trying again may help.
+  bool _connectFailed = false;
+
+  /// Lights whose setup is being finished.
+  final _finishing = <int>{};
 
   /// The message under the title.
   String get status => _status;
   bool get statusIsError => _statusIsError;
 
   /// Connecting or adding a light.
-  bool get busy => _busy;
+  bool get busy => _connecting != null || _adding != null;
+
+  /// Something is under way that the message describes.
+  bool get working => busy || _finishing.isNotEmpty;
   bool get loaded => _home.loaded;
   Connection get connection => _connection.state;
   bool get isConnected => _connection.isConnected;
+
+  /// Whether the header offers Try again: only after a connect failed.
+  bool get showRetry =>
+      _connectFailed && !busy && connection == Connection.off && lights.isNotEmpty;
 
   List<Light> get lights => _home.home.lights;
   List<Light> get ready => _home.home.ready;
@@ -90,10 +117,16 @@ class HomeViewModel extends ChangeNotifier {
   String statusLine(Light l) {
     final s = stateOf(l);
     if (l.wasReset) return 'Was reset';
+    if (_finishing.contains(l.addr)) return 'Finishing setup…';
     if (!l.configured) return 'Setup not finished';
     if (!isConnected && !s.known) return 'Not connected';
     if (isConnected && !s.responding) return 'Not responding';
-    if (!s.on) return 'Off';
+    if (!isConnected) return 'Last seen ${s.on ? _looks(l) : 'off'}';
+    return s.on ? _looks(l) : 'Off';
+  }
+
+  /// Brightness and color or white, such as "70% · Warm".
+  static String _looks(Light l) {
     final look = switch (l.hue) {
       final h? when l.inColor => ' · ${colorName(h, l.saturation)}',
       _ when l.hasCtl => ' · ${warmth(l.kelvin)}',
@@ -121,14 +154,22 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// A light that needs the user before it can be controlled.
-  bool needsAction(Light l) => l.wasReset || !l.configured;
+  bool needsAction(Light l) => l.wasReset || (!l.configured && !_finishing.contains(l.addr));
 
   /// What tapping a light that needs the user does.
   String? actionLabel(Light l) => l.wasReset
       ? 'Set up again'
-      : !l.configured
+      : !l.configured && !_finishing.contains(l.addr)
       ? 'Finish setup'
       : null;
+
+  List<Light> get _resetLights => [
+    for (final l in lights)
+      if (l.wasReset) l,
+  ];
+
+  /// Several lights were reset: one button sets them all up again.
+  bool get canSetUpAllAgain => _resetLights.length > 1;
 
   /// The all-lights tile's status.
   String get allStatus {
@@ -153,12 +194,22 @@ class HomeViewModel extends ChangeNotifier {
     Connection.off => 'Not connected',
   };
 
+  /// Shows [msg] under the title. Errors stay until the next message, and
+  /// so does progress (a message ending in …); anything else clears itself
+  /// after [infoLinger].
   void _say(String msg, {bool error = false}) {
     _status = msg;
     _statusIsError = error;
+    _statusTimer?.cancel();
+    _statusTimer = null;
+    if (msg.isNotEmpty && !error && !msg.endsWith('…')) {
+      _statusTimer = Timer(infoLinger, () => _say(''));
+    }
     if (msg.isNotEmpty) _log.add(error ? 'ERROR $msg' : msg);
     notifyListeners();
   }
+
+  static const _noAnswer = "The bulb didn't answer. Move closer and try again.";
 
   // ---------- lifecycle and connection ----------
 
@@ -184,57 +235,81 @@ class HomeViewModel extends ChangeNotifier {
         _away = true;
       case AppLifecycleState.resumed when _away:
         _away = false;
-        if (loaded && lights.isNotEmpty && connection == Connection.off && !_busy) await connect();
+        if (loaded && lights.isNotEmpty && connection == Connection.off && !busy) await connect();
       default:
     }
   }
 
+  /// Connects. If a connect is already under way, or a light is being
+  /// added, waits for it instead of starting another.
   Future<void> connect() async {
-    if (_busy || isConnected) return;
-    _busy = true;
-    _say(lights.isEmpty ? '' : 'Looking for your lights…');
+    final adding = _adding;
+    if (adding != null) await adding;
+    if (isConnected) return;
+    final running = _connecting;
+    if (running != null) {
+      await running;
+      return;
+    }
+    final done = Completer<void>();
+    _connecting = done.future;
     try {
-      switch (await _connect()) {
-        case Connected():
-          final reset = [
-            for (final l in lights)
-              if (l.wasReset) l.name,
-          ];
-          // The header already says Connected; only reset lights need a message.
-          _log.add('Connected.');
-          _say(_resetMessage(reset), error: reset.isNotEmpty);
-        case NoLights():
-          _say('Add a light first.');
-        case NoneFound():
-          _say('No lights found nearby. Make sure they are powered on and close by.', error: true);
-        case OldSetup():
-          _say(
-            'The bulbs nearby are still on their old setup. Reset a bulb with five quick off/on cycles, then use Add a light.',
-            error: true,
-          );
-        case ConnectFailed(:final detail):
-          _say(
-            detail == null
-                ? 'Could not connect. Close nRF Mesh or other light apps, then try again.'
-                : 'Could not connect: $detail',
-            error: true,
-          );
-        case LightsWereReset(:final names):
-          _say(_resetMessage(names), error: true);
-        case BluetoothOff(:final message):
-          _say(message, error: true);
-      }
+      await _connectNow();
     } finally {
-      _busy = false;
+      _connecting = null;
+      done.complete();
       notifyListeners();
+    }
+  }
+
+  Future<void> _connectNow() async {
+    _connectFailed = false;
+    _say(lights.isEmpty ? '' : 'Looking for your lights…');
+    final ConnectResult result;
+    try {
+      result = await _connect();
+    } catch (e) {
+      _log.add('Connect failed: $e');
+      _connectFailed = true;
+      _say(_noAnswer, error: true);
+      return;
+    }
+    switch (result) {
+      case Connected():
+        final reset = [
+          for (final l in lights)
+            if (l.wasReset) l.name,
+        ];
+        // The header already says Connected; only reset lights need a message.
+        _log.add('Connected.');
+        _say(_resetMessage(reset), error: reset.isNotEmpty);
+      case NoLights():
+        _say('Add a light first.');
+      case NoneFound():
+        _connectFailed = true;
+        _say('No lights found nearby. Make sure they are powered on and close by.', error: true);
+      case OldSetup():
+        _connectFailed = true;
+        _say(
+          "These bulbs belong to another app's network. Reset one (switch it off and on five times), then add it.",
+          error: true,
+        );
+      case ConnectFailed(:final detail):
+        _connectFailed = true;
+        if (detail != null) _log.add('Connect failed: $detail');
+        _say('Could not connect. Close nRF Mesh or other light apps, then try again.', error: true);
+      case LightsWereReset(:final names):
+        _say(_resetMessage(names), error: true);
+      case BluetoothOff(:final message):
+        _connectFailed = true;
+        _say(message, error: true);
     }
   }
 
   static String _resetMessage(List<String> names) => switch (names) {
     [] => '',
     [final one] => '$one was reset. Tap it to set it up again.',
-    [...final rest, final last] =>
-      '${rest.join(', ')} and $last were reset. Tap each one to set it up again.',
+    [...final rest, final last] => '${rest.join(', ')} and $last were reset.',
   };
 
   Future<void> disconnect() => _connection.disconnect();
@@ -242,16 +317,18 @@ class HomeViewModel extends ChangeNotifier {
   /// After an unexpected disconnect: reconnects at once while the app is in
   /// front, otherwise when it comes back ([lifecycleChanged]).
   Future<void> _reconnect() async {
-    if (_away || _busy) {
+    if (busy) {
+      // A connect or setup under way handles its own links.
+      _log.add('Disconnected.');
+      return;
+    }
+    if (_away) {
       _say('Disconnected.');
       return;
     }
     _log.add('Disconnected. Reconnecting.');
     await connect();
   }
-
-  /// Connect, or disconnect when connected.
-  Future<void> toggleConnection() => isConnected ? disconnect() : connect();
 
   // ---------- home-screen widgets ----------
 
@@ -275,11 +352,33 @@ class HomeViewModel extends ChangeNotifier {
   // ---------- adding a light ----------
 
   /// Provisions and configures [bulb]. Returns true if it joined the network
-  /// (even if its setup is unfinished).
+  /// (even if its setup is unfinished). Waits for a connect or another add
+  /// under way first.
   Future<bool> addLight(NearbyBulb bulb) async {
-    await _whileBusy();
-    if (_busy) return false;
-    _busy = true;
+    final connecting = _connecting;
+    if (connecting != null) {
+      _say('Waiting for the connection…');
+      await connecting;
+    }
+    for (var other = _adding; other != null; other = _adding) {
+      await other;
+    }
+    final done = Completer<bool>();
+    _adding = done.future; // _add's first message notifies
+    AddLightResult? result;
+    try {
+      result = await _add(bulb);
+    } finally {
+      _adding = null;
+      done.complete(result != null);
+      notifyListeners();
+    }
+    if (result case LightNeedsSetup(:final light)) unawaited(_finishInBackground(light));
+    return result != null;
+  }
+
+  /// Adds [bulb] and says how it went. Null if it did not join.
+  Future<AddLightResult?> _add(NearbyBulb bulb) async {
     _say('Connecting to ${bulb.name}…');
     try {
       final r = await _addLight(
@@ -290,26 +389,51 @@ class HomeViewModel extends ChangeNotifier {
         case LightAdded(:final light):
           _say('${light.name} is ready.');
         case LightNeedsSetup(:final light):
-          _say(
-            '${light.name} was added but needs one more step. Tap it to finish setup.',
-            error: true,
-          );
+          _finishing.add(light.addr);
+          _say('${light.name} was added. Finishing its setup…');
       }
-      return true;
+      return r;
     } on ProvisioningException catch (e) {
+      _log.add('Setup failed: $e');
       _say(_provisioningMessage(e), error: true);
-      return false;
     } on BluetoothUnavailable catch (e) {
       _say(e.message, error: true);
-      return false;
+    } on ServiceNotFound catch (e) {
+      _log.add('Setup failed: $e');
+      _say(
+        "The bulb isn't ready to be set up. Reset it (switch it off and on five times) and try again.",
+        error: true,
+      );
     } catch (e) {
-      final s = '$e';
-      _say(s.startsWith('Exception: ') ? s.substring(11) : s, error: true);
-      return false;
-    } finally {
-      _busy = false;
-      notifyListeners();
+      // Timeouts and anything else: the detail is for the activity log.
+      _log.add('Setup failed: $e');
+      _say(_noAnswer, error: true);
     }
+    return null;
+  }
+
+  /// Tries twice more to finish a new light's setup before asking the user.
+  Future<void> _finishInBackground(Light light) async {
+    final addr = light.addr;
+    try {
+      for (var i = 0; i < 2; i++) {
+        if (!await _connected()) break;
+        final l = _home.home.lightAt(addr);
+        if (l == null) return; // removed meanwhile
+        if (l.configured || await _lights.configure(addr) == ConfigureResult.ready) {
+          _finishing.remove(addr);
+          _say('${light.name} is ready.');
+          await _lights.queryState(addr);
+          return;
+        }
+      }
+    } catch (e) {
+      _log.add('Finishing setup for ${light.name} failed: $e');
+    } finally {
+      _finishing.remove(addr);
+    }
+    if (_home.home.lightAt(addr) == null) return;
+    _say('${light.name} was added but needs one more step. Tap it to finish setup.', error: true);
   }
 
   /// Sets up a light that was reset outside the app again, keeping its
@@ -317,32 +441,62 @@ class HomeViewModel extends ChangeNotifier {
   Future<bool> setUpAgain(Light l) async {
     final id = l.bleId;
     if (id == null) {
-      _say('Reset ${l.name} (five quick off/on cycles), then use Add a light.', error: true);
+      _say('Reset ${l.name} (switch it off and on five times), then use Add a light.', error: true);
       return false;
     }
     return addLight(NearbyBulb(id: id, name: l.name, rssi: 0, replaces: l.name));
   }
 
+  /// Sets up every reset light again, one after another.
+  Future<void> setUpAllAgain() async {
+    final failed = <String>[];
+    for (final l in _resetLights) {
+      if (!await setUpAgain(l)) failed.add(l.name);
+    }
+    if (failed.isEmpty) return;
+    _say(
+      '${_names(failed)} could not be set up again. Move closer and tap each one to try again.',
+      error: true,
+    );
+  }
+
+  static String _names(List<String> names) => switch (names) {
+    [] => '',
+    [final one] => one,
+    [...final rest, final last] => '${rest.join(', ')} and $last',
+  };
+
   static String _provisioningMessage(ProvisioningException e) => switch (e.error) {
     ProvisioningError.disconnected => 'The bulb disconnected during setup. Reset it and try again.',
     ProvisioningError.noAnswer =>
       'The bulb stopped answering. Move closer, reset it, and try again.',
-    ProvisioningError.failed =>
-      'The bulb stopped setup (error ${e.code ?? '?'}). Reset it and try again.',
+    ProvisioningError.failed => 'The bulb stopped setup. Reset it and try again.',
     ProvisioningError.unexpected => 'The bulb sent an unexpected reply. Reset it and try again.',
     ProvisioningError.unsupported => 'This bulb uses a setup method Lumina does not support.',
     ProvisioningError.securityCheck =>
       'The bulb failed its security check. Reset it and try again.',
   };
 
-  /// Finish setup for a light from its row.
+  /// Finish setup for a light from its row. Connects first if needed;
+  /// connecting finishes unfinished setups by itself.
   Future<void> finishSetup(Light l) async {
-    if (!isConnected) {
-      await connect(); // connecting configures unfinished lights
+    if (_finishing.contains(l.addr)) return;
+    if (!await _connected()) return;
+    final now = _home.home.lightAt(l.addr);
+    if (now == null) return;
+    if (now.configured) {
+      _say('${l.name} is ready.');
       return;
     }
+    _finishing.add(l.addr);
     _say('Finishing setup for ${l.name}…');
-    switch (await _lights.configure(l.addr)) {
+    final ConfigureResult result;
+    try {
+      result = await _lights.configure(l.addr);
+    } finally {
+      _finishing.remove(l.addr);
+    }
+    switch (result) {
       case ConfigureResult.ready:
         _say('${l.name} is ready.');
         await _lights.queryState(l.addr);
@@ -358,37 +512,66 @@ class HomeViewModel extends ChangeNotifier {
 
   // ---------- control ----------
 
-  /// Connects first when needed, so no command waits on a Connect button.
-  /// Returns false if the lights can't be reached.
+  /// Connects first when needed (or waits for the connect under way), so
+  /// no command waits on a Connect button. Returns false, with a message,
+  /// if the lights can't be reached.
   Future<bool> _connected() async {
     if (isConnected) return true;
-    await _whileBusy();
-    if (!isConnected) await connect();
-    return isConnected;
-  }
-
-  /// Waits for a connect or setup in progress (such as a reconnect) to end.
-  Future<void> _whileBusy() async {
-    for (var i = 0; i < 300 && _busy; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+    await connect();
+    if (isConnected) return true;
+    // A failed connect has said why; say something if it did not.
+    if (!_statusIsError) {
+      _say('Could not reach your lights. Move closer and try again.', error: true);
     }
+    return false;
   }
 
   Future<void> toggleAll() async {
     if (await _connected()) await _lights.toggleAll();
   }
 
-  /// All-lights sliders.
-  void setAll({int? level, int? kelvin}) {
-    if (isConnected) {
-      _lights.setAll(level: level, kelvin: kelvin);
+  /// Slider values set while disconnected, by light address (null for all
+  /// lights). Each is sent once, with its latest value, when connected. Kept
+  /// here because the states read on connecting would overwrite them.
+  final _pending = <int?, _Look>{};
+
+  void _sendLater(int? addr, _Look look) {
+    final old = _pending[addr];
+    _pending[addr] = old == null
+        ? look
+        : (
+            level: look.level ?? old.level,
+            // A temperature switches to white, a hue to color.
+            kelvin: look.kelvin ?? (look.hue != null ? null : old.kelvin),
+            hue: look.hue ?? (look.kelvin != null ? null : old.hue),
+            saturation: look.saturation ?? old.saturation,
+          );
+    if (old == null) unawaited(_sendOnceConnected(addr));
+  }
+
+  Future<void> _sendOnceConnected(int? addr) async {
+    final ok = await _connected();
+    final look = _pending.remove(addr);
+    if (!ok || look == null) return;
+    if (addr == null) {
+      _lights.setAll(level: look.level, kelvin: look.kelvin);
     } else {
-      unawaited(
-        _connected().then((ok) {
-          if (ok) _lights.setAll(level: level, kelvin: kelvin);
-        }),
+      _lights.setLevel(
+        addr,
+        level: look.level,
+        kelvin: look.kelvin,
+        hue: look.hue,
+        saturation: look.saturation,
       );
     }
+  }
+
+  /// All-lights sliders. The lights show the new value at once; while
+  /// disconnected it is sent once connected.
+  void setAll({int? level, int? kelvin}) {
+    final now = isConnected;
+    _lights.setAll(level: level, kelvin: kelvin, send: now);
+    if (!now) _sendLater(null, (level: level, kelvin: kelvin, hue: null, saturation: null));
   }
 
   Future<void> applyPreset(Preset p) async {
@@ -399,34 +582,56 @@ class HomeViewModel extends ChangeNotifier {
     if (await _connected()) await _lights.setPower(l.addr, on);
   }
 
-  /// One light's sliders: brightness, white temperature, or color.
+  /// One light's sliders: brightness, white temperature, or color. Like
+  /// [setAll], waits for a connection to send.
   void setLight(Light l, {int? level, int? kelvin, int? hue, int? saturation}) {
-    void send() =>
-        _lights.setLevel(l.addr, level: level, kelvin: kelvin, hue: hue, saturation: saturation);
-    if (isConnected) {
-      send();
-    } else {
-      unawaited(
-        _connected().then((ok) {
-          if (ok) send();
-        }),
-      );
+    final now = isConnected;
+    _lights.setLevel(
+      l.addr,
+      level: level,
+      kelvin: kelvin,
+      hue: hue,
+      saturation: saturation,
+      send: now,
+    );
+    if (!now) {
+      _sendLater(l.addr, (level: level, kelvin: kelvin, hue: hue, saturation: saturation));
     }
   }
 
   Future<void> rename(Light l, String name) => _lights.rename(l.addr, name);
 
-  Future<void> remove(Light l) async {
-    await _lights.remove(l.addr);
+  /// Resets the bulb and forgets [l]. Returns false, keeping the light, if
+  /// the bulb could not be reached or did not answer; ask with
+  /// [removeUnanswered], then [removeAnyway].
+  Future<bool> remove(Light l) async {
+    if (l.wasReset) {
+      // The bulb already left the network.
+      await _lights.forget(l.addr);
+    } else if (!await _connected() || !await _lights.remove(l.addr)) {
+      return false;
+    }
+    _say('${l.name} was removed.');
+    return true;
+  }
+
+  /// The question when [remove] got no answer from the bulb.
+  String removeUnanswered(Light l) =>
+      "${l.name} didn't answer. Remove it anyway? You'll need to reset the bulb by switching it off and on five times.";
+
+  /// Forgets [l] without resetting the bulb.
+  Future<void> removeAnyway(Light l) async {
+    await _lights.forget(l.addr);
     _say('${l.name} was removed.');
   }
 
   /// Makes the light's current level and temperature its power-on default.
   Future<void> useAsDefault(Light l) async {
+    if (!await _connected()) return;
     final r = await _lights.setCtlDefault(l.addr, l.level, l.kelvin);
     _say(
       r != null
-          ? '${l.name} will use ${l.level}% and ${l.kelvin} K as its default.'
+          ? '${l.name} will come on at ${l.level}%, ${warmth(l.kelvin).toLowerCase()} white.'
           : '${l.name} did not answer. Try again.',
       error: r == null,
     );
@@ -434,7 +639,12 @@ class HomeViewModel extends ChangeNotifier {
 
   // ---------- scenes ----------
 
+  /// The name the Save each light dialog suggests: the lowest unused
+  /// "Scene N".
+  String get nextSceneName => _lowestUnused('Scene', scenes.values);
+
   Future<void> saveScene(String name) async {
+    if (!await _connected()) return;
     final n = await _scenes.save(name);
     _say(
       n > 0
@@ -454,34 +664,85 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> forgetScene(int scene) => _scenes.forget(scene);
+  Future<void> forgetScene(int scene) async {
+    if (!await _connected()) return;
+    await _scenes.forget(scene);
+  }
 
   // ---------- the user's presets ----------
 
   /// Presets the user made. The built-in ones are [presets].
   List<Preset> get customPresets => _home.home.presets;
 
+  /// The name the New scene sheet suggests: the lowest unused "My scene N".
+  String get nextPresetName => _lowestUnused('My scene', [for (final p in customPresets) p.name]);
+
+  static String _lowestUnused(String stem, Iterable<String> taken) {
+    final used = {for (final t in taken) t.trim().toLowerCase()};
+    var n = 1;
+    while (used.contains('${stem.toLowerCase()} $n')) {
+      n++;
+    }
+    return '$stem $n';
+  }
+
+  /// Each ready light, and whether it was on, when the New scene sheet
+  /// opened. Null when the sheet is closed.
+  List<(Light, bool)>? _beforeNewScene;
+
+  /// Whether the New scene sheet changed the lights.
+  bool _previewed = false;
+
+  /// Remembers how the lights look, so [endNewScene] can put them back.
+  void beginNewScene() {
+    _beforeNewScene = [for (final l in ready) (l, stateOf(l).on)];
+    _previewed = false;
+  }
+
   /// Shows a brightness and warmth on every light while a preset is being
   /// made, without asking to connect.
   void preview({int? level, int? kelvin}) {
-    if (isConnected) _lights.setAll(level: level, kelvin: kelvin);
+    if (!isConnected) return;
+    _previewed = true;
+    _lights.setAll(level: level, kelvin: kelvin);
+  }
+
+  /// When the New scene sheet closes: unless a preset was [saved], puts
+  /// every light back as it was when the sheet opened.
+  Future<void> endNewScene({required bool saved}) async {
+    final before = _beforeNewScene;
+    final previewed = _previewed;
+    _beforeNewScene = null;
+    _previewed = false;
+    if (saved || before == null || !previewed || !isConnected) return;
+    // Let the last preview message go out first, so it can't undo this.
+    await Future<void>.delayed(_lights.timings.throttle * 2);
+    for (final (l, on) in before) {
+      if (_home.home.lightAt(l.addr) == null) continue;
+      // A light that was off only needs switching off again.
+      _lights.setLevel(
+        l.addr,
+        level: l.level,
+        kelvin: l.kelvin,
+        hue: l.hue,
+        saturation: l.saturation,
+        send: on,
+      );
+      if (!on) await _lights.setPower(l.addr, false);
+    }
   }
 
   /// Saves a preset that sets every light to [level] and [kelvin]. Returns
-  /// false if the name can't be used.
-  Future<bool> savePreset(String name, {required int level, required int kelvin}) async {
+  /// why the name can't be used, or null once saved.
+  Future<String?> savePreset(String name, {required int level, required int kelvin}) async {
     final n = name.trim();
-    if (n.isEmpty) {
-      _say('Give the scene a name.', error: true);
-      return false;
-    }
-    if (presets.any((p) => p.name.toLowerCase() == n.toLowerCase())) {
-      _say('$n is already a built-in scene. Pick another name.', error: true);
-      return false;
-    }
+    if (n.isEmpty) return 'Give the scene a name.';
+    bool taken(List<Preset> list) => list.any((p) => p.name.toLowerCase() == n.toLowerCase());
+    if (taken(presets)) return '$n is already a built-in scene. Pick another name.';
+    if (taken(customPresets)) return 'You already have a scene called $n. Pick another name.';
     await _home.savePreset(Preset(n, level, kelvin));
     _say('Saved $n. Tap it to use it.');
-    return true;
+    return null;
   }
 
   Future<void> deletePreset(Preset p) => _home.removePreset(p.name);
@@ -490,18 +751,30 @@ class HomeViewModel extends ChangeNotifier {
 
   String backupCode() => _home.backupCode();
 
-  void backupCopied() => _say('Backup code copied.');
+  /// Shown once the backup code is on the clipboard.
+  static const backupCopied = 'Backup code copied.';
+
+  /// Whether clipboard [text] looks like a backup code worth pre-filling.
+  static bool looksLikeBackupCode(String? text) =>
+      text != null && text.trim().startsWith(Home.backupPrefix);
+
+  /// Why [code] can't be restored, or null if it can.
+  static String? checkBackupCode(String code) {
+    if (code.trim().isEmpty) return 'Paste your backup code.';
+    try {
+      Home.fromBackupCode(code);
+      return null;
+    } catch (_) {
+      return 'That backup code is not valid. Paste the full code, starting with LAMPLIGHT1.';
+    }
+  }
 
   /// Replaces the lights with a backup. Returns false if the code is not
   /// valid.
   Future<bool> restore(String code) async {
-    try {
-      Home.fromBackupCode(code);
-    } on FormatException {
-      _say(
-        'That backup code is not valid. Paste the full code, starting with LAMPLIGHT1.',
-        error: true,
-      );
+    final invalid = checkBackupCode(code);
+    if (invalid != null) {
+      _say(invalid, error: true);
       return false;
     }
     await _connection.disconnect();
@@ -523,6 +796,7 @@ class HomeViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _statusTimer?.cancel();
     _widgetSub?.cancel();
     _widgets.close();
     removeListener(_syncWidgets);

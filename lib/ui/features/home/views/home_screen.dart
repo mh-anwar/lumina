@@ -78,6 +78,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return [
       SliverToBoxAdapter(child: _Header(viewModel: c)),
       SliverToBoxAdapter(child: _StatusBanner(viewModel: c)),
+      if (c.canSetUpAllAgain)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: FilledButton.tonal(
+                onPressed: c.busy ? null : c.setUpAllAgain,
+                child: const Text('Set up all again'),
+              ),
+            ),
+          ),
+        ),
       if (c.lights.isEmpty)
         SliverToBoxAdapter(child: _EmptyState(viewModel: c))
       else ...[
@@ -125,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           delegate: SliverChildListDelegate([
             for (final l in c.lights) _lightTile(context, l),
-            _AddTile(onTap: c.busy ? null : () => _addLight(context)),
+            _AddTile(onTap: () => _addLight(context)),
           ]),
         ),
       ],
@@ -135,11 +148,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _lightTile(BuildContext context, Light l) {
     final s = c.stateOf(l);
     final attention = c.needsAction(l);
-    VoidCallback? tap;
+    // These wait for a connect under way rather than being turned off.
+    final VoidCallback tap;
     if (l.wasReset) {
-      tap = c.busy ? null : () => c.setUpAgain(l);
+      tap = () => c.setUpAgain(l);
     } else if (!l.configured) {
-      tap = c.busy ? null : () => c.finishSetup(l);
+      tap = () => c.finishSetup(l);
     } else {
       tap = () => c.setPower(l, !s.on);
     }
@@ -280,14 +294,14 @@ class _Header extends StatelessWidget {
                         ),
                       const SizedBox(width: 8),
                       Text(c.connectionLabel, style: TextStyle(color: p.muted, fontSize: 14)),
-                      if (c.connection == Connection.off && c.lights.isNotEmpty)
+                      if (c.showRetry)
                         TextButton(
-                          onPressed: c.busy ? null : c.connect,
+                          onPressed: c.connect,
                           style: TextButton.styleFrom(
                             visualDensity: VisualDensity.compact,
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
-                          child: const Text('Connect'),
+                          child: const Text('Try again'),
                         ),
                     ],
                   ),
@@ -337,7 +351,7 @@ class _StatusBanner extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (c.busy)
+                    if (c.working)
                       const Padding(
                         padding: EdgeInsets.only(top: 2),
                         child: SizedBox(
@@ -409,7 +423,7 @@ class _EmptyState extends StatelessWidget {
           step(2, 'Tap Add a light and pick the bulb.'),
           const SizedBox(height: 18),
           FilledButton.icon(
-            onPressed: c.busy ? null : () => showAddLightSheet(context, onPicked: c.addLight),
+            onPressed: () => showAddLightSheet(context, onPicked: c.addLight),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Add a light'),
           ),
