@@ -26,7 +26,7 @@ void main() {
     });
 
     test('binds color on a bulb that sends its composition under another page number', () async {
-      final bulb = MockBulb('AA:01', 'Bulb E5AC')
+      final bulb = MockBulb('AA:01', 'BLE Bulb_C010')
         ..sigModels = [...MockBulb('', '').sigModels, Models.hsl, Models.hslSetup]
         ..compositionPage = 0xee;
       final h = await Harness.start(FakeBle([bulb]));
@@ -293,7 +293,7 @@ void main() {
 
   group('color', () {
     Future<(Harness, MockBulb)> colorBulb() async {
-      final bulb = MockBulb('AA:01', 'Bulb E5AC')
+      final bulb = MockBulb('AA:01', 'BLE Bulb_C010')
         ..sigModels = [...MockBulb('', '').sigModels, Models.hsl, Models.hslSetup];
       final h = await Harness.start(FakeBle([bulb]));
       await h.add(bulb);
