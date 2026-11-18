@@ -51,19 +51,22 @@ void main() {
     expect(bulb.kelvin, 4000);
   });
 
-  test('asks to connect before controlling', () async {
+  test('connects by itself when a command needs it', () async {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
     final h = await Harness.start(FakeBle([bulb]));
     await h.vm.addLight(nearby(bulb));
     await h.vm.disconnect();
-    await h.vm.toggleAll();
-    expect(h.vm.status, 'Tap Connect first.');
-    expect(h.vm.statusIsError, isTrue);
     expect(
       h.vm.statusLine(h.vm.lights.single),
       isNot('Not connected'),
       reason: 'the state is known from before',
     );
+    final wasOn = bulb.on;
+    await h.vm.toggleAll();
+    expect(h.vm.isConnected, isTrue);
+    expect(h.vm.statusIsError, isFalse);
+    await settle();
+    expect(bulb.on, !wasOn);
   });
 
   test('explains a bulb that is on another network', () async {
@@ -78,15 +81,27 @@ void main() {
     expect(h.vm.connection, Connection.off);
   });
 
-  test('reports an unexpected disconnect', () async {
+  test('reconnects after an unexpected disconnect', () async {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
     final h = await Harness.start(FakeBle([bulb]));
     await h.vm.addLight(nearby(bulb));
     bulb.dropConnection();
+    for (var i = 0; i < 100 && !h.vm.isConnected; i++) {
+      await settle(20);
+    }
+    expect(h.vm.isConnected, isTrue);
+    expect(h.vm.connection, Connection.on);
+  });
+
+  test('waits to reconnect while the app is in the background', () async {
+    final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
+    final h = await Harness.start(FakeBle([bulb]));
+    await h.vm.addLight(nearby(bulb));
+    await h.vm.lifecycleChanged(AppLifecycleState.paused);
+    bulb.dropConnection();
     await settle();
     expect(h.vm.isConnected, isFalse);
-    expect(h.vm.connection, Connection.off);
-    expect(h.vm.status, startsWith('Disconnected'));
+    expect(h.vm.status, 'Disconnected.');
   });
 
   test('a bulb that will not take the AppKey needs Finish setup', () async {
@@ -134,7 +149,7 @@ void main() {
     expect(h.vm.lights, isEmpty);
 
     expect(await h.vm.restore(code), isTrue);
-    expect(h.vm.status, 'Restored 1 light. Tap Connect.');
+    expect(h.vm.status, 'Restored 1 light.');
     expect(h.vm.lights, hasLength(1));
 
     await h.vm.startOver();

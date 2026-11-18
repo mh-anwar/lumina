@@ -92,6 +92,9 @@ class ConnectionRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Connection tries per bulb.
+  static const _attempts = 3;
+
   /// Finds a nearby bulb on our network and connects through it.
   Future<ConnectResult> connect() async {
     if (isConnected) return const Connected();
@@ -109,14 +112,20 @@ class ConnectionRepository extends ChangeNotifier {
       }
       var foreign = 0;
       for (final b in candidates.take(4)) {
-        try {
-          await _proxy.open(b.id);
-          return const Connected();
-        } on ForeignNetwork {
-          foreign++;
-          _log.add('${b.name} belongs to another network');
-        } catch (e) {
-          _log.add('Could not connect to ${b.name}: $e');
+        // Android often fails a first connection (GATT error 133) that
+        // works when tried again.
+        for (var attempt = 1; attempt <= _attempts; attempt++) {
+          try {
+            await _proxy.open(b.id);
+            return const Connected();
+          } on ForeignNetwork {
+            foreign++;
+            _log.add('${b.name} belongs to another network');
+            break;
+          } catch (e) {
+            _log.add('Could not connect to ${b.name} (try $attempt of $_attempts): $e');
+            if (attempt < _attempts) await Future<void>.delayed(timings.reconnectBase);
+          }
         }
       }
       return foreign > 0 ? const OldSetup() : const ConnectFailed();

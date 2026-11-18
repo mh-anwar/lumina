@@ -44,6 +44,9 @@ class MockBulb {
   /// Fail the first proxy connection after provisioning, like Android's
   /// stale GATT cache, unless the caller asks for a fresh service table.
   bool staleGattCacheAfterProvisioning = false;
+
+  /// Connections that fail before one works, like Android's GATT error 133.
+  int failingConnects = 0;
   bool _justProvisioned = false;
 
   final received = <String>[];
@@ -88,6 +91,10 @@ class MockBulb {
   _MockLink? _link;
 
   MeshLink open(MeshService svc, {required bool fresh}) {
+    if (failingConnects > 0) {
+      failingConnects--;
+      throw StateError('Disconnected with status 133 (GATT_ERROR)');
+    }
     if (svc == MeshService.provisioning && provisioned) throw ServiceNotFound();
     if (svc == MeshService.proxy && !provisioned) throw ServiceNotFound();
     if (svc == MeshService.proxy && _justProvisioned) {

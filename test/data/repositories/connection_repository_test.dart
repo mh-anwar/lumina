@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumina/data/repositories/connection_repository.dart';
 import 'package:lumina/data/services/home_store.dart';
@@ -142,12 +143,26 @@ void main() {
     expect(h2.connection.deviceId, 'AA:01');
   });
 
+  test('tries a bulb again when Android fails the first connections', () async {
+    final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
+    final h = await Harness.start(FakeBle([bulb]));
+    await h.add(bulb);
+    await h.connection.disconnect();
+    bulb.failingConnects = 2;
+    expect(await h.connection.connect(), isA<Connected>());
+    bulb.failingConnects = 3;
+    await h.connection.disconnect();
+    expect(await h.connection.connect(), isA<ConnectFailed>());
+  });
+
   test('emits dropped when the link goes away, not on disconnect', () async {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
     final h = await Harness.start(FakeBle([bulb]));
     await h.add(bulb);
     var drops = 0;
     h.connection.dropped.listen((_) => drops++);
+    // In the background, so the app doesn't reconnect by itself.
+    await h.vm.lifecycleChanged(AppLifecycleState.paused);
     bulb.dropConnection();
     await settle();
     expect(drops, 1);
