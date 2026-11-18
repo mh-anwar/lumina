@@ -5,7 +5,18 @@ name: CI
 on:
   push:
     branches: [main]
+    # Docs and screenshots don't change the app.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
   workflow_dispatch:
+
+# A newer push supersedes an older run: the latest run tests everything that
+# landed before it, so the older one is cancelled instead of queueing.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
