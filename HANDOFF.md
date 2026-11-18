@@ -38,7 +38,11 @@ The last runs on `main` were cancelled by newer pushes or hung before the hang f
   - The rescan now waits `rescanPause` (1 s) before starting again.
   - The spinner is replaced by a static icon.
 
-## In flight: two finished branches, pushed but not merged
+## In flight
+
+**Update:** `ux-bluetooth` is now merged into `main` as `6048b84` (rebased; `flutter analyze` clean). Its CI run on `main` is the first to compile the new Kotlin, so check it. Only `ux-viewmodel` remains: rebase it the same way. Expect conflicts in `home_view_model.dart` and its test, since `ux-bluetooth` added the Bluetooth-ready hook, `ConnectBusy` and the `ToggleLightAction` case there.
+
+## Branch details
 
 Both branches are on GitHub, branched from `3079e57` (an old `color` commit). To merge each one:
 1. Rebase onto `main`: `git fetch upstream && git rebase --onto upstream/main 3079e57 <branch>`. Expect small conflicts in `home_view_model.dart`, `home_view_model_test.dart`, `light_repository.dart` and `dependencies.dart`, since both branches touch them.
