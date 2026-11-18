@@ -415,9 +415,7 @@ class MockBulb {
       lightness = u16le(a, 2);
       kelvin = u16le(a, 4);
       on = lightness > 0;
-    } else if (!isDev &&
-        (op == Op.hslSet || op == Op.hslSetUnack) &&
-        _accepts(Models.hsl, dst)) {
+    } else if (!isDev && (op == Op.hslSet || op == Op.hslSetUnack) && _accepts(Models.hsl, dst)) {
       lightness = u16le(a, 2);
       hue = u16le(a, 4);
       saturation = u16le(a, 6);

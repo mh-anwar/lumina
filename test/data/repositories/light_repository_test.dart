@@ -17,7 +17,10 @@ void main() {
       await h.add(bulb);
       expect(bulb.bound, {0x1000, 0x1300, 0x1303, 0x1304, 0x1203, 0x1204, 0x1206, 0x1207});
       expect(h.single.models.values.every((v) => v), isTrue);
-      expect(h.single.models.keys.toSet(), Models.bindable.keys.toSet().difference({'hsl', 'hslSetup'}));
+      expect(
+        h.single.models.keys.toSet(),
+        Models.bindable.keys.toSet().difference({'hsl', 'hslSetup'}),
+      );
       expect(h.single.hasHsl, isFalse);
       expect(h.log.text, contains('0x05040000'));
     });

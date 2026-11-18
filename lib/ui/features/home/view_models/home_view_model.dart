@@ -401,13 +401,8 @@ class HomeViewModel extends ChangeNotifier {
 
   /// One light's sliders: brightness, white temperature, or color.
   void setLight(Light l, {int? level, int? kelvin, int? hue, int? saturation}) {
-    void send() => _lights.setLevel(
-      l.addr,
-      level: level,
-      kelvin: kelvin,
-      hue: hue,
-      saturation: saturation,
-    );
+    void send() =>
+        _lights.setLevel(l.addr, level: level, kelvin: kelvin, hue: hue, saturation: saturation);
     if (isConnected) {
       send();
     } else {

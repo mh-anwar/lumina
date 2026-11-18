@@ -97,18 +97,15 @@ class _LightSheetState extends State<_LightSheet> {
                 SegmentedButton<bool>(
                   showSelectedIcon: false,
                   style: SegmentedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(radiusSmall),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusSmall)),
                   ),
                   segments: const [
                     ButtonSegment(value: false, label: Text('White')),
                     ButtonSegment(value: true, label: Text('Color')),
                   ],
                   selected: {l.inColor},
-                  onSelectionChanged: (v) => v.first
-                      ? c.setLight(l, hue: _lastHue)
-                      : c.setLight(l, kelvin: l.kelvin),
+                  onSelectionChanged: (v) =>
+                      v.first ? c.setLight(l, hue: _lastHue) : c.setLight(l, kelvin: l.kelvin),
                 ),
               ],
               const SizedBox(height: 16),

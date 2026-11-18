@@ -18,7 +18,10 @@ mixin _$Light {
  int get addr; int get elements; String get name;/// Hex.
  String get devKey; bool get configured;/// Models the AppKey is bound to, by key of `Models.bindable`.
  Map<String, bool> get models;/// 1–100 %.
- int get level; int get kelvin;/// Models (keys of `Models.bindable`) subscribed to [allLightsGroup].
+ int get level; int get kelvin;/// The color's hue in degrees (0–359), or null when the light shows
+/// white at [kelvin]. Only for lights with the HSL model.
+ int? get hue;/// The color's saturation, 0–100 %.
+ int get saturation;/// Models (keys of `Models.bindable`) subscribed to [allLightsGroup].
  Set<String> get groupModels;/// Platform Bluetooth id (MAC on Android), if known. Not in web backups.
  String? get bleId;/// The bulb was seen advertising as a new bulb: it was reset outside
 /// Lumina and has forgotten the network.
@@ -34,20 +37,20 @@ $LightCopyWith<Light> get copyWith => _$LightCopyWithImpl<Light>(this as Light, 
 @override
 bool operator ==(Object other) {
   final _this = this as Light;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Light&&(identical(other.addr, _this.addr) || other.addr == _this.addr)&&(identical(other.elements, _this.elements) || other.elements == _this.elements)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.devKey, _this.devKey) || other.devKey == _this.devKey)&&(identical(other.configured, _this.configured) || other.configured == _this.configured)&&const DeepCollectionEquality().equals(other.models, _this.models)&&(identical(other.level, _this.level) || other.level == _this.level)&&(identical(other.kelvin, _this.kelvin) || other.kelvin == _this.kelvin)&&const DeepCollectionEquality().equals(other.groupModels, _this.groupModels)&&(identical(other.bleId, _this.bleId) || other.bleId == _this.bleId)&&(identical(other.wasReset, _this.wasReset) || other.wasReset == _this.wasReset));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Light&&(identical(other.addr, _this.addr) || other.addr == _this.addr)&&(identical(other.elements, _this.elements) || other.elements == _this.elements)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.devKey, _this.devKey) || other.devKey == _this.devKey)&&(identical(other.configured, _this.configured) || other.configured == _this.configured)&&const DeepCollectionEquality().equals(other.models, _this.models)&&(identical(other.level, _this.level) || other.level == _this.level)&&(identical(other.kelvin, _this.kelvin) || other.kelvin == _this.kelvin)&&(identical(other.hue, _this.hue) || other.hue == _this.hue)&&(identical(other.saturation, _this.saturation) || other.saturation == _this.saturation)&&const DeepCollectionEquality().equals(other.groupModels, _this.groupModels)&&(identical(other.bleId, _this.bleId) || other.bleId == _this.bleId)&&(identical(other.wasReset, _this.wasReset) || other.wasReset == _this.wasReset));
 }
 
 
 @override
 int get hashCode {
   final _this = this as Light;
-  return Object.hash(runtimeType,_this.addr,_this.elements,_this.name,_this.devKey,_this.configured,const DeepCollectionEquality().hash(_this.models),_this.level,_this.kelvin,const DeepCollectionEquality().hash(_this.groupModels),_this.bleId,_this.wasReset);
+  return Object.hash(runtimeType,_this.addr,_this.elements,_this.name,_this.devKey,_this.configured,const DeepCollectionEquality().hash(_this.models),_this.level,_this.kelvin,_this.hue,_this.saturation,const DeepCollectionEquality().hash(_this.groupModels),_this.bleId,_this.wasReset);
 }
 
 @override
 String toString() {
   final _this = this as Light;
-  return 'Light(addr: ${_this.addr}, elements: ${_this.elements}, name: ${_this.name}, devKey: ${_this.devKey}, configured: ${_this.configured}, models: ${_this.models}, level: ${_this.level}, kelvin: ${_this.kelvin}, groupModels: ${_this.groupModels}, bleId: ${_this.bleId}, wasReset: ${_this.wasReset})';
+  return 'Light(addr: ${_this.addr}, elements: ${_this.elements}, name: ${_this.name}, devKey: ${_this.devKey}, configured: ${_this.configured}, models: ${_this.models}, level: ${_this.level}, kelvin: ${_this.kelvin}, hue: ${_this.hue}, saturation: ${_this.saturation}, groupModels: ${_this.groupModels}, bleId: ${_this.bleId}, wasReset: ${_this.wasReset})';
 }
 
 
@@ -58,7 +61,7 @@ abstract mixin class $LightCopyWith<$Res>  {
   factory $LightCopyWith(Light value, $Res Function(Light) _then) = _$LightCopyWithImpl;
 @useResult
 $Res call({
- int addr, int elements, String name, String devKey, bool configured, Map<String, bool> models, int level, int kelvin, Set<String> groupModels, String? bleId, bool wasReset
+ int addr, int elements, String name, String devKey, bool configured, Map<String, bool> models, int level, int kelvin, int? hue, int saturation, Set<String> groupModels, String? bleId, bool wasReset
 });
 
 
@@ -75,7 +78,7 @@ class _$LightCopyWithImpl<$Res>
 
 /// Create a copy of Light
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? addr = null,Object? elements = null,Object? name = null,Object? devKey = null,Object? configured = null,Object? models = null,Object? level = null,Object? kelvin = null,Object? groupModels = null,Object? bleId = freezed,Object? wasReset = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? addr = null,Object? elements = null,Object? name = null,Object? devKey = null,Object? configured = null,Object? models = null,Object? level = null,Object? kelvin = null,Object? hue = freezed,Object? saturation = null,Object? groupModels = null,Object? bleId = freezed,Object? wasReset = null,}) {
   return _then(Light(
 addr: null == addr ? _self.addr : addr // ignore: cast_nullable_to_non_nullable
 as int,elements: null == elements ? _self.elements : elements // ignore: cast_nullable_to_non_nullable
@@ -85,6 +88,8 @@ as String,configured: null == configured ? _self.configured : configured // igno
 as bool,models: null == models ? _self.models : models // ignore: cast_nullable_to_non_nullable
 as Map<String, bool>,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
 as int,kelvin: null == kelvin ? _self.kelvin : kelvin // ignore: cast_nullable_to_non_nullable
+as int,hue: freezed == hue ? _self.hue : hue // ignore: cast_nullable_to_non_nullable
+as int?,saturation: null == saturation ? _self.saturation : saturation // ignore: cast_nullable_to_non_nullable
 as int,groupModels: null == groupModels ? _self.groupModels : groupModels // ignore: cast_nullable_to_non_nullable
 as Set<String>,bleId: freezed == bleId ? _self.bleId : bleId // ignore: cast_nullable_to_non_nullable
 as String?,wasReset: null == wasReset ? _self.wasReset : wasReset // ignore: cast_nullable_to_non_nullable
@@ -173,10 +178,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int addr,  int elements,  String name,  String devKey,  bool configured,  Map<String, bool> models,  int level,  int kelvin,  Set<String> groupModels,  String? bleId,  bool wasReset)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int addr,  int elements,  String name,  String devKey,  bool configured,  Map<String, bool> models,  int level,  int kelvin,  int? hue,  int saturation,  Set<String> groupModels,  String? bleId,  bool wasReset)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Light() when $default != null:
-return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configured,_that.models,_that.level,_that.kelvin,_that.groupModels,_that.bleId,_that.wasReset);case _:
+return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configured,_that.models,_that.level,_that.kelvin,_that.hue,_that.saturation,_that.groupModels,_that.bleId,_that.wasReset);case _:
   return orElse();
 
 }
@@ -194,10 +199,10 @@ return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configur
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int addr,  int elements,  String name,  String devKey,  bool configured,  Map<String, bool> models,  int level,  int kelvin,  Set<String> groupModels,  String? bleId,  bool wasReset)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int addr,  int elements,  String name,  String devKey,  bool configured,  Map<String, bool> models,  int level,  int kelvin,  int? hue,  int saturation,  Set<String> groupModels,  String? bleId,  bool wasReset)  $default,) {final _that = this;
 switch (_that) {
 case _Light():
-return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configured,_that.models,_that.level,_that.kelvin,_that.groupModels,_that.bleId,_that.wasReset);case _:
+return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configured,_that.models,_that.level,_that.kelvin,_that.hue,_that.saturation,_that.groupModels,_that.bleId,_that.wasReset);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -214,10 +219,10 @@ return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configur
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int addr,  int elements,  String name,  String devKey,  bool configured,  Map<String, bool> models,  int level,  int kelvin,  Set<String> groupModels,  String? bleId,  bool wasReset)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int addr,  int elements,  String name,  String devKey,  bool configured,  Map<String, bool> models,  int level,  int kelvin,  int? hue,  int saturation,  Set<String> groupModels,  String? bleId,  bool wasReset)?  $default,) {final _that = this;
 switch (_that) {
 case _Light() when $default != null:
-return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configured,_that.models,_that.level,_that.kelvin,_that.groupModels,_that.bleId,_that.wasReset);case _:
+return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configured,_that.models,_that.level,_that.kelvin,_that.hue,_that.saturation,_that.groupModels,_that.bleId,_that.wasReset);case _:
   return null;
 
 }
@@ -229,7 +234,7 @@ return $default(_that.addr,_that.elements,_that.name,_that.devKey,_that.configur
 
 
 class _Light extends Light {
-  const _Light({required this.addr, this.elements = 1, required this.name, required this.devKey, this.configured = false,  Map<String, bool> models = const {}, this.level = 70, this.kelvin = 3000,  Set<String> groupModels = const {}, this.bleId, this.wasReset = false}): _models = models,_groupModels = groupModels,super._();
+  const _Light({required this.addr, this.elements = 1, required this.name, required this.devKey, this.configured = false,  Map<String, bool> models = const {}, this.level = 70, this.kelvin = 3000, this.hue, this.saturation = 100,  Set<String> groupModels = const {}, this.bleId, this.wasReset = false}): _models = models,_groupModels = groupModels,super._();
   
 
 @override final  int addr;
@@ -250,6 +255,11 @@ class _Light extends Light {
 /// 1–100 %.
 @override@JsonKey() final  int level;
 @override@JsonKey() final  int kelvin;
+/// The color's hue in degrees (0–359), or null when the light shows
+/// white at [kelvin]. Only for lights with the HSL model.
+@override final  int? hue;
+/// The color's saturation, 0–100 %.
+@override@JsonKey() final  int saturation;
 /// Models (keys of `Models.bindable`) subscribed to [allLightsGroup].
  final  Set<String> _groupModels;
 /// Models (keys of `Models.bindable`) subscribed to [allLightsGroup].
@@ -275,18 +285,18 @@ _$LightCopyWith<_Light> get copyWith => __$LightCopyWithImpl<_Light>(this, _$ide
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Light&&(identical(other.addr, addr) || other.addr == addr)&&(identical(other.elements, elements) || other.elements == elements)&&(identical(other.name, name) || other.name == name)&&(identical(other.devKey, devKey) || other.devKey == devKey)&&(identical(other.configured, configured) || other.configured == configured)&&const DeepCollectionEquality().equals(other.models, _models)&&(identical(other.level, level) || other.level == level)&&(identical(other.kelvin, kelvin) || other.kelvin == kelvin)&&const DeepCollectionEquality().equals(other.groupModels, _groupModels)&&(identical(other.bleId, bleId) || other.bleId == bleId)&&(identical(other.wasReset, wasReset) || other.wasReset == wasReset));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Light&&(identical(other.addr, addr) || other.addr == addr)&&(identical(other.elements, elements) || other.elements == elements)&&(identical(other.name, name) || other.name == name)&&(identical(other.devKey, devKey) || other.devKey == devKey)&&(identical(other.configured, configured) || other.configured == configured)&&const DeepCollectionEquality().equals(other.models, _models)&&(identical(other.level, level) || other.level == level)&&(identical(other.kelvin, kelvin) || other.kelvin == kelvin)&&(identical(other.hue, hue) || other.hue == hue)&&(identical(other.saturation, saturation) || other.saturation == saturation)&&const DeepCollectionEquality().equals(other.groupModels, _groupModels)&&(identical(other.bleId, bleId) || other.bleId == bleId)&&(identical(other.wasReset, wasReset) || other.wasReset == wasReset));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,addr,elements,name,devKey,configured,const DeepCollectionEquality().hash(_models),level,kelvin,const DeepCollectionEquality().hash(_groupModels),bleId,wasReset);
+    return Object.hash(runtimeType,addr,elements,name,devKey,configured,const DeepCollectionEquality().hash(_models),level,kelvin,hue,saturation,const DeepCollectionEquality().hash(_groupModels),bleId,wasReset);
 }
 
 @override
 String toString() {
-    return 'Light(addr: $addr, elements: $elements, name: $name, devKey: $devKey, configured: $configured, models: $models, level: $level, kelvin: $kelvin, groupModels: $groupModels, bleId: $bleId, wasReset: $wasReset)';
+    return 'Light(addr: $addr, elements: $elements, name: $name, devKey: $devKey, configured: $configured, models: $models, level: $level, kelvin: $kelvin, hue: $hue, saturation: $saturation, groupModels: $groupModels, bleId: $bleId, wasReset: $wasReset)';
 }
 
 
@@ -297,7 +307,7 @@ abstract mixin class _$LightCopyWith<$Res> implements $LightCopyWith<$Res> {
   factory _$LightCopyWith(_Light value, $Res Function(_Light) _then) = __$LightCopyWithImpl;
 @override @useResult
 $Res call({
- int addr, int elements, String name, String devKey, bool configured, Map<String, bool> models, int level, int kelvin, Set<String> groupModels, String? bleId, bool wasReset
+ int addr, int elements, String name, String devKey, bool configured, Map<String, bool> models, int level, int kelvin, int? hue, int saturation, Set<String> groupModels, String? bleId, bool wasReset
 });
 
 
@@ -314,7 +324,7 @@ class __$LightCopyWithImpl<$Res>
 
 /// Create a copy of Light
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? addr = null,Object? elements = null,Object? name = null,Object? devKey = null,Object? configured = null,Object? models = null,Object? level = null,Object? kelvin = null,Object? groupModels = null,Object? bleId = freezed,Object? wasReset = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? addr = null,Object? elements = null,Object? name = null,Object? devKey = null,Object? configured = null,Object? models = null,Object? level = null,Object? kelvin = null,Object? hue = freezed,Object? saturation = null,Object? groupModels = null,Object? bleId = freezed,Object? wasReset = null,}) {
   return _then(_Light(
 addr: null == addr ? _self.addr : addr // ignore: cast_nullable_to_non_nullable
 as int,elements: null == elements ? _self.elements : elements // ignore: cast_nullable_to_non_nullable
@@ -324,6 +334,8 @@ as String,configured: null == configured ? _self.configured : configured // igno
 as bool,models: null == models ? _self._models : models // ignore: cast_nullable_to_non_nullable
 as Map<String, bool>,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
 as int,kelvin: null == kelvin ? _self.kelvin : kelvin // ignore: cast_nullable_to_non_nullable
+as int,hue: freezed == hue ? _self.hue : hue // ignore: cast_nullable_to_non_nullable
+as int?,saturation: null == saturation ? _self.saturation : saturation // ignore: cast_nullable_to_non_nullable
 as int,groupModels: null == groupModels ? _self._groupModels : groupModels // ignore: cast_nullable_to_non_nullable
 as Set<String>,bleId: freezed == bleId ? _self.bleId : bleId // ignore: cast_nullable_to_non_nullable
 as String?,wasReset: null == wasReset ? _self.wasReset : wasReset // ignore: cast_nullable_to_non_nullable
