@@ -503,8 +503,36 @@ class FakeBle implements BleService {
     }
   }
 
+  bool _ready = true;
+  final _readyChanges = StreamController<bool>.broadcast(); // ignore: close_sinks
+  int settingsOpened = 0;
+
+  /// Turns the simulated Bluetooth off or on.
+  void setReady(bool ready) {
+    if (ready == _ready) return;
+    _ready = ready;
+    _readyChanges.add(ready);
+  }
+
   @override
-  Future<void> ensureReady() async {}
+  Future<void> ensureReady() async {
+    if (!_ready) {
+      throw BluetoothUnavailable('Bluetooth is off.', BluetoothUnavailableReason.off);
+    }
+  }
+
+  @override
+  Stream<bool> get readyChanges => _readyChanges.stream;
+
+  @override
+  Future<void> openSettings() async {
+    settingsOpened++;
+  }
+
+  /// Keeps each scan open after its first list until [stopScan], like a
+  /// platform scan that has not timed out yet.
+  bool scansStayOpen = false;
+  Completer<void>? _openScan;
 
   @override
   Stream<List<FoundBulb>> scan(Set<MeshService> services, {Duration? timeout}) async* {
@@ -521,10 +549,15 @@ class FakeBle implements BleService {
         if (services.contains(b.advertises))
           FoundBulb(b.id, b.name, b.rssi, b.advertises, proxyData: b.proxyAdvert()),
     ]..sort((a, b) => b.rssi - a.rssi);
+    if (scansStayOpen) await (_openScan = Completer<void>()).future;
   }
 
   @override
-  Future<void> stopScan() async {}
+  Future<void> stopScan() async {
+    final open = _openScan;
+    _openScan = null;
+    if (open != null && !open.isCompleted) open.complete();
+  }
 
   @override
   Future<MeshLink> connect(String id, MeshService service, {bool fresh = false}) async {

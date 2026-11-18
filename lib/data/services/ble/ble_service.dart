@@ -42,9 +42,25 @@ abstract class MeshLink {
   Future<void> disconnect();
 }
 
+/// Why Bluetooth can't be used.
+enum BluetoothUnavailableReason {
+  off,
+  permissionDenied,
+
+  /// Denied for good: only the app's page in the system settings can allow
+  /// it now ([BleService.openSettings]).
+  permissionPermanentlyDenied,
+
+  /// Android 11 and lower need Location on to scan.
+  locationOff,
+  unsupported,
+  notReady,
+}
+
 class BluetoothUnavailable implements Exception {
   final String message;
-  BluetoothUnavailable(this.message);
+  final BluetoothUnavailableReason reason;
+  BluetoothUnavailable(this.message, [this.reason = BluetoothUnavailableReason.notReady]);
   @override
   String toString() => message;
 }
@@ -61,15 +77,38 @@ abstract class BleService {
   /// Throws [BluetoothUnavailable] if Bluetooth is off or not permitted.
   Future<void> ensureReady();
 
+  /// Emits whether Bluetooth is usable each time that changes, for example
+  /// true when it is turned on.
+  Stream<bool> get readyChanges;
+
+  /// Opens the app's page in the system settings, where a permanently
+  /// denied permission can be allowed.
+  Future<void> openSettings();
+
   /// Emits the growing list of bulbs advertising any of [services],
-  /// strongest first. Each bulb says which service it offers.
-  Stream<List<FoundBulb>> scan(Set<MeshService> services, {Duration timeout});
+  /// strongest first. Each bulb says which service it offers. [timeout]
+  /// defaults to Timings.defaultScan.
+  Stream<List<FoundBulb>> scan(Set<MeshService> services, {Duration? timeout});
 
   Future<void> stopScan();
 
   /// Connects and opens [service]. [fresh] asks the platform to drop cached
   /// GATT services first.
   Future<MeshLink> connect(String id, MeshService service, {bool fresh = false});
+}
+
+/// Held while the Add a light sheet scans. The platform runs one scan at a
+/// time, so an automatic connect must not start its own scan meanwhile.
+class ScanHold {
+  int _holds = 0;
+
+  bool get held => _holds > 0;
+
+  void hold() => _holds++;
+
+  void release() {
+    if (_holds > 0) _holds--;
+  }
 }
 
 /// Serializes writes to a link, splitting nothing: callers pass ready chunks.

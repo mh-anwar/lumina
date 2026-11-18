@@ -22,6 +22,10 @@ sealed class WidgetAction {
     if (uri == null || uri.scheme != 'luminar') return null;
     return switch (uri.host) {
       'toggle' => const ToggleAllAction(),
+      'light' => switch (int.tryParse(uri.queryParameters['addr'] ?? '')) {
+        final addr? when addr >= 0x0001 && addr <= 0x7FFF => ToggleLightAction(addr),
+        _ => null,
+      },
       'preset' => switch (presets.where((p) => p.name == uri.queryParameters['name'])) {
         final found when found.isNotEmpty => ApplyPresetAction(found.first),
         _ => null,
@@ -45,4 +49,18 @@ final class ApplyPresetAction extends WidgetAction {
 
   @override
   Uri toUri() => Uri(scheme: 'luminar', host: 'preset', queryParameters: {'name': preset.name});
+}
+
+/// Turns one light on or off: the One light widget.
+final class ToggleLightAction extends WidgetAction {
+  /// The light's unicast address.
+  final int addr;
+  const ToggleLightAction(this.addr);
+
+  @override
+  Uri toUri() => Uri(
+    scheme: 'luminar',
+    host: 'light',
+    queryParameters: {'addr': '0x${addr.toRadixString(16).padLeft(4, '0')}'},
+  );
 }

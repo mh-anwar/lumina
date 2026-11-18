@@ -4,15 +4,42 @@ import 'package:lumina/data/services/home_widget_service.dart';
 import 'package:lumina/domain/models/widget_action.dart';
 
 void main() {
-  test('redraws the widgets only when the status changes', () async {
+  test('redraws what the background isolate changed', () async {
+    // One storage, as the app and the widget's isolate share the plugin's.
     final service = MemoryHomeWidgetService();
-    final r = WidgetRepository(service: service, portName: 'lumina.test.redraw');
-    expect(await r.lastStatus(), isNull);
+    final app = WidgetRepository(service: service, portName: 'lumina.test.redraw');
+    final isolate = WidgetRepository(service: service, portName: 'lumina.test.redraw');
+    await app.show(WidgetStatus.on);
+    await app.show(WidgetStatus.on);
+    expect(service.shown, [WidgetStatus.on], reason: 'no redraw when nothing changed');
+
+    await isolate.show(WidgetStatus.unavailable);
+    await app.show(WidgetStatus.on);
+    expect(service.shown.last, WidgetStatus.on);
+  });
+
+  test('remembers on or off apart from what the widget shows', () async {
+    final r = WidgetRepository(service: MemoryHomeWidgetService(), portName: 'lumina.test.on');
+    expect(await r.lastOn(), isNull);
     await r.show(WidgetStatus.on);
-    await r.show(WidgetStatus.on);
-    await r.show(WidgetStatus.off);
-    expect(service.shown, [WidgetStatus.on, WidgetStatus.off]);
-    expect(await r.lastStatus(), WidgetStatus.off);
+    await r.show(WidgetStatus.busy);
+    await r.show(WidgetStatus.unavailable);
+    expect(await r.lastOn(), isTrue, reason: 'a tap now turns the lights off');
+
+    await r.showLight(0x10, WidgetStatus.off);
+    await r.showLight(0x10, WidgetStatus.busy);
+    expect(await r.lastLightOn(0x10), isFalse);
+    expect(await r.lastLightOn(0x11), isNull);
+  });
+
+  test('saves the lights for the One light widget, and their known states', () async {
+    final service = MemoryHomeWidgetService();
+    final r = WidgetRepository(service: service, portName: 'lumina.test.lights');
+    await r.syncLights([(0x10, 'Desk', true), (0x11, 'Lamp', null)]);
+    expect(service.lights, [(0x10, 'Desk'), (0x11, 'Lamp')]);
+    expect(service.lightShown, {
+      0x10: [WidgetStatus.on],
+    }, reason: 'an unknown state is not drawn');
   });
 
   test('hands a tap to the running app and returns its answer', () async {

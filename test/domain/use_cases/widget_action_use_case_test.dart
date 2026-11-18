@@ -49,6 +49,29 @@ void main() {
     expect(bulbs.map((b) => b.kelvin), everyElement(6500));
   });
 
+  test('switches one light from its last known state', () async {
+    expect(
+      await background.widgetAction(const ToggleLightAction(0x10), wasOn: false),
+      WidgetStatus.on,
+    );
+    await settle();
+    expect(bulbs.map((b) => b.on), [true, false]);
+
+    expect(
+      await background.widgetAction(const ToggleLightAction(0x10), wasOn: true),
+      WidgetStatus.off,
+    );
+    await settle();
+    expect(bulbs[0].on, isFalse);
+  });
+
+  test('reports unavailable for a light that is gone', () async {
+    expect(
+      await background.widgetAction(const ToggleLightAction(0x20), wasOn: false),
+      WidgetStatus.unavailable,
+    );
+  });
+
   test('reports unavailable when no light is in range', () async {
     ble.bulbs.clear();
     expect(

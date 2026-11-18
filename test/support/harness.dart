@@ -10,12 +10,21 @@ import 'mock_bulb.dart';
 
 const fast = Timings(
   scan: Duration(milliseconds: 10),
+  addLightScan: Duration(milliseconds: 10),
+  defaultScan: Duration(milliseconds: 10),
+  bleStatus: Duration(milliseconds: 10),
+  bleConnect: Duration(milliseconds: 100),
+  bleConnectGuard: Duration(milliseconds: 200),
+  notifySettle: Duration(milliseconds: 1),
   beacon: Duration(milliseconds: 100),
   provReply: Duration(seconds: 2),
   configReply: Duration(milliseconds: 300),
+  nodeReset: Duration(milliseconds: 100),
   reconnectBase: Duration(milliseconds: 10),
   reconnectStep: Duration(milliseconds: 10),
   throttle: Duration(milliseconds: 20),
+  askApp: Duration(milliseconds: 500),
+  writeFlush: Duration(milliseconds: 1),
 );
 
 Future<void> settle([int ms = 50]) => Future<void>.delayed(Duration(milliseconds: ms));
