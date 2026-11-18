@@ -337,6 +337,8 @@ class _LightTileState extends State<LightTile> {
       label: w.name,
       value: w.status,
       toggled: w.attention ? null : w.on,
+      increasedValue: canDim ? '${(w.level + 10).clamp(1, 100)}%' : null,
+      decreasedValue: canDim ? '${(w.level - 10).clamp(1, 100)}%' : null,
       onIncrease: canDim ? () => _step(10) : null,
       onDecrease: canDim ? () => _step(-10) : null,
       child: GestureDetector(
