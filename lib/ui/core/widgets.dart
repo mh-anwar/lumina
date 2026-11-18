@@ -350,15 +350,9 @@ class _LightTileState extends State<LightTile> {
         onHorizontalDragEnd: canDim ? _dragEnd : null,
         onHorizontalDragCancel: canDim ? _dragEnd : null,
         child: Material(
-          // A light that's on takes a soft tint of its own white.
-          color: lit
-              ? Color.alphaBlend(w.color.withValues(alpha: dark ? 0.1 : 0.18), p.surface)
-              : p.surface,
+          color: lit ? litTile(w.color) : (dark ? p.surface : p.off),
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMedium),
-            side: BorderSide(color: p.line),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusMedium)),
           child: InkWell(
             onTap: w.onTap == null
                 ? null
@@ -380,7 +374,7 @@ class _LightTileState extends State<LightTile> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(2),
                       child: ColoredBox(
-                        color: p.line,
+                        color: const Color(0x1F000000),
                         child: Align(
                           alignment: AlignmentDirectional.centerStart,
                           child: AnimatedFractionallySizedBox(
@@ -390,7 +384,7 @@ class _LightTileState extends State<LightTile> {
                             curve: Curves.easeOut,
                             widthFactor: level,
                             heightFactor: 1,
-                            child: ColoredBox(color: p.text),
+                            child: const ColoredBox(color: litText),
                           ),
                         ),
                       ),
@@ -413,7 +407,7 @@ class _LightTileState extends State<LightTile> {
                                   ? p.danger.withValues(alpha: 0.14)
                                   : lit
                                   ? w.color
-                                  : p.off,
+                                  : (dark ? p.off : p.surface),
                             ),
                             child: Icon(
                               w.attention ? Icons.priority_high_rounded : w.icon,
@@ -431,7 +425,11 @@ class _LightTileState extends State<LightTile> {
                               tooltip: 'More for ${w.name}',
                               visualDensity: VisualDensity.compact,
                               onPressed: open,
-                              icon: Icon(Icons.tune_rounded, size: 20, color: p.muted),
+                              icon: Icon(
+                                Icons.tune_rounded,
+                                size: 20,
+                                color: lit ? litMuted : p.muted,
+                              ),
                             ),
                         ],
                       ),
@@ -440,7 +438,11 @@ class _LightTileState extends State<LightTile> {
                         w.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: lit ? litText : p.text,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -449,7 +451,11 @@ class _LightTileState extends State<LightTile> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13.5,
-                          color: w.attention ? p.danger : p.muted,
+                          color: w.attention
+                              ? p.danger
+                              : lit
+                              ? litMuted
+                              : p.muted,
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
