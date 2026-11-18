@@ -7,9 +7,14 @@ import 'package:lumina/domain/models/nearby_bulb.dart';
 
 /// Scans for bulbs that are ready to add.
 class AddLightViewModel extends ChangeNotifier {
-  AddLightViewModel({required this._provisioning});
+  AddLightViewModel({required this._provisioning, this.rescanPause = const Duration(seconds: 1)});
 
   final ProvisioningRepository _provisioning;
+
+  /// Pause before scanning again after a scan ends, so a scan that ends at
+  /// once (no Bluetooth, or a fake in tests) doesn't restart in a tight loop.
+  final Duration rescanPause;
+  Timer? _rescan;
   StreamSubscription<List<NearbyBulb>>? _sub;
 
   List<NearbyBulb> _found = const [];
@@ -60,7 +65,12 @@ class AddLightViewModel extends ChangeNotifier {
         notifyListeners();
       },
       onDone: () {
-        if (!_stopped && _error == null) return _listen();
+        if (!_stopped && _error == null) {
+          _rescan = Timer(rescanPause, () {
+            if (!_stopped) _listen();
+          });
+          return;
+        }
         _scanning = false;
         notifyListeners();
       },
@@ -83,6 +93,7 @@ class AddLightViewModel extends ChangeNotifier {
 
   Future<void> stop() async {
     _stopped = true;
+    _rescan?.cancel();
     await _sub?.cancel();
     _sub = null;
     await _provisioning.stopScan();
@@ -103,6 +114,8 @@ class AddLightViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _stopped = true;
+    _rescan?.cancel();
     unawaited(_sub?.cancel());
     super.dispose();
   }
