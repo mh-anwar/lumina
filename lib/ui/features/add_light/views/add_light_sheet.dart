@@ -69,12 +69,9 @@ class _AddLightSheetState extends State<_AddLightSheet> {
                     style: TextStyle(color: p.muted, fontWeight: FontWeight.w600),
                   ),
                   const Spacer(),
+                  // No spinner: the sheet scans for as long as it's open.
                   if (scanning)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                    Icon(Icons.bluetooth_searching_rounded, size: 18, color: p.muted)
                   else
                     TextButton(onPressed: vm.scan, child: const Text('Scan again')),
                 ],

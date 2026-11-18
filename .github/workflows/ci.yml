@@ -24,6 +24,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A hanging test fails the run instead of holding it for hours.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -46,7 +48,7 @@ jobs:
 
       - name: Run tests
         if: ${{ !cancelled() }}
-        run: flutter test
+        run: flutter test --timeout 2m
 
       # Regenerates the freezed code and prints any difference to commit.
       - name: Check generated code
