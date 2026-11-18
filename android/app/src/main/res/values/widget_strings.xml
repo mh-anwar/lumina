@@ -2,7 +2,14 @@
 <resources>
     <string name="widget_toggle_label">Lights on/off</string>
     <string name="widget_toggle_description">Turn all your lights on or off</string>
-    <string name="widget_presets_label">Lights and presets</string>
-    <string name="widget_presets_description">Turn all lights on or off, or pick a preset</string>
+    <string name="widget_presets_label">Lights and scenes</string>
+    <string name="widget_presets_description">Turn all lights on or off, or pick a scene</string>
     <string name="widget_toggle_a11y">Toggle all lights</string>
+    <string name="widget_light_label">One light</string>
+    <string name="widget_light_description">Turn one light on or off</string>
+    <string name="widget_light_a11y">Toggle this light</string>
+    <string name="widget_light_choose">Choose a light</string>
+    <string name="widget_light_none">Open Lumina and add a light first.</string>
+    <string name="widget_light_missing">Removed</string>
+    <string name="shortcut_failed">Couldn\'t reach your lights. Open Lumina to see why.</string>
 </resources>

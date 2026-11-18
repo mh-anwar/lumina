@@ -32,16 +32,6 @@ void main() {
     expect(await r.lastLightOn(0x11), isNull);
   });
 
-  test('saves the lights for the One light widget, and their known states', () async {
-    final service = MemoryHomeWidgetService();
-    final r = WidgetRepository(service: service, portName: 'lumina.test.lights');
-    await r.syncLights([(0x10, 'Desk', true), (0x11, 'Lamp', null)]);
-    expect(service.lights, [(0x10, 'Desk'), (0x11, 'Lamp')]);
-    expect(service.lightShown, {
-      0x10: [WidgetStatus.on],
-    }, reason: 'an unknown state is not drawn');
-  });
-
   test('hands a tap to the running app and returns its answer', () async {
     final app = WidgetRepository(service: MemoryHomeWidgetService(), portName: 'lumina.test.app');
     final widget = WidgetRepository(

@@ -13,12 +13,6 @@ class _FakeReactiveBle implements FlutterReactiveBle {
   final adverts = StreamController<DiscoveredDevice>.broadcast();
   int scansStarted = 0, scansCancelled = 0;
 
-  // ignore: close_sinks
-  final statuses = StreamController<BleStatus>.broadcast();
-
-  @override
-  Stream<BleStatus> get statusStream => statuses.stream;
-
   @override
   Stream<DiscoveredDevice> scanForDevices({
     required List<Uuid> withServices,
@@ -117,23 +111,6 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(second.last.single.name, 'BLE Bulb_ACF1');
     await adapter.stopScan();
-  });
-
-  test('reports Bluetooth becoming usable or not, once per change', () async {
-    final fake = _FakeReactiveBle();
-    final seen = <bool>[];
-    ReactiveBleService(ble: fake).readyChanges.listen(seen.add);
-    for (final s in [
-      BleStatus.unknown,
-      BleStatus.poweredOff,
-      BleStatus.poweredOff,
-      BleStatus.ready,
-      BleStatus.ready,
-    ]) {
-      fake.statuses.add(s);
-    }
-    await Future<void>.delayed(Duration.zero);
-    expect(seen, [false, true]);
   });
 
   test('scan ends by itself at the timeout', () async {

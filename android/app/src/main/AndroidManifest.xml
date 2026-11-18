@@ -68,6 +68,26 @@
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/widget_presets_info" />
         </receiver>
+        <receiver android:name=".OneLightWidget"
+            android:exported="true"
+            android:label="@string/widget_light_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/widget_light_info" />
+        </receiver>
+        <!-- Picks the light for a new One light widget. Exported: the
+             launcher starts it. -->
+        <activity
+            android:name=".OneLightConfigureActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.Dialog">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <!-- Runs widget taps in Dart. Not exported: only our own widgets'
              PendingIntents (sent as this app) may reach it, so other apps
              cannot switch the lights. -->

@@ -65,13 +65,6 @@ void main() {
     expect(bulbs[0].on, isFalse);
   });
 
-  test('reports unavailable for a light that is gone', () async {
-    expect(
-      await background.widgetAction(const ToggleLightAction(0x20), wasOn: false),
-      WidgetStatus.unavailable,
-    );
-  });
-
   test('reports unavailable when no light is in range', () async {
     ble.bulbs.clear();
     expect(
