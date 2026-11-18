@@ -162,9 +162,9 @@ void main() {
 
     expect(await h.vm.restore(code), isTrue);
     expect(h.vm.lights, hasLength(1));
-    // Restoring connects at once; the removed bulb was reset, so it's gone.
+    // Restoring connects at once; the removed bulb was reset, so it can't.
     expect(h.vm.isConnected, isFalse);
-    expect(h.vm.status, startsWith('No lights found'));
+    expect(h.vm.status, 'BLE Bulb_7B2E was reset. Tap it to set it up again.');
 
     await h.vm.forgetAll();
     expect(h.vm.lights, isEmpty);
