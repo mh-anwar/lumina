@@ -1,160 +1,119 @@
 # Lumina
 
-[![CI](https://github.com/snwagbata/luminar/actions/workflows/ci.yml/badge.svg)](https://github.com/snwagbata/luminar/actions/workflows/ci.yml)
+[![CI](https://github.com/mh-anwar/lumina/actions/workflows/ci.yml/badge.svg)](https://github.com/mh-anwar/lumina/actions/workflows/ci.yml)
 
-Lumina is a fork of [Luminar](https://github.com/snwagbata/luminar) by snwagbata, with a redesigned interface. It's a Flutter app that sets up and controls Sengled Dual Mode Bluetooth Mesh bulbs without Sengled's apps or nRF Mesh. It creates its own mesh network, adds bulbs to it, and controls on/off, brightness, color temperature, and scenes.
+Control Sengled Bluetooth Mesh bulbs from your phone, with no Sengled app, no account and no cloud. Lumina sets up the bulbs on its own mesh network and never touches the internet.
 
-Lumina is tested on Android. It also builds for iOS, with the Bluetooth permission text, app icon, and splash screen, but the iOS app hasn't been run on an iPhone yet. Home-screen widgets and app shortcuts are Android-only.
+Lumina is a fork of [Luminar](https://github.com/snwagbata/luminar) by snwagbata, with a redesigned interface.
 
 <p align="center">
-  <img src="docs/screenshots/home-light.png" width="240" alt="The home screen: an All lights tile showing 2 of 3 on, a row of presets and saved scenes, and a tile for each light.">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/screenshots/lights-dark.png" width="240" alt="The desk lamp's controls in dark mode: brightness and warmth sliders, the power-on setting, and Remove light.">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/screenshots/add-light-light.png" width="240" alt="The Add a light sheet, listing two reset bulbs ready to add with their signal strength.">
+  <img src="docs/screenshots/home-light.png" width="240" alt="The home screen: an All lights tile, a row of scenes, and a tile for each light.">&nbsp;&nbsp;
+  <img src="docs/screenshots/lights-dark.png" width="240" alt="A light's controls in dark mode: brightness, warmth, white tones, and the power-on setting.">&nbsp;&nbsp;
+  <img src="docs/screenshots/add-light-light.png" width="240" alt="The Add a light sheet, listing two reset bulbs nearby.">
 </p>
 
-## Features
+## What it does
 
-- **Setup without other apps:** Lumina adds a reset bulb to its own network in about 10 seconds.
-- **All lights at once:** the All lights tile, its sliders, presets, and scenes reach every bulb in one group message, so they change together.
-- **Each light on its own:** tap a tile to switch it and drag across it to dim it. Its tune button opens warmth, rename, remove, and the power-on setting.
-- **Scenes:** save the current look of every light and bring it back with one tap.
-- **Reset detection:** a bulb reset with its light switch shows **Was reset**, and **Set up again** keeps its name and place in the list.
-- **Android widgets and app shortcuts:** switch lights or pick a preset from the home screen without opening the app.
-- **Fast reconnect:** Lumina connects to your lights in about 4 seconds when it opens.
-- **Backups:** a backup code restores your lights on another phone.
+- **Tap a light to switch it, drag across it to dim it.** The tune button opens warmth, white tones, rename and remove.
+- **All lights at once** from one tile, in a single group message so they change together.
+- **Scenes:** built-in ones (Relax, Read, Daylight, Night), your own brightness-and-white scenes, and snapshots of each light stored on the bulbs.
+- **Home-screen widgets and app shortcuts** (Android) that work without opening the app.
+- **Backups:** a code that moves your lights to another phone.
+- **Private by design:** no internet permission, no analytics, no accounts.
 
-## Install on an Android phone
+The supported bulbs are tunable white, from warm (2700 K) to daylight (6500 K). They have no color model.
 
-1. Build the APK:
+## Install
 
-   ```bash
-   flutter build apk --release
-   ```
+Download `lumina-vX.Y.Z.apk` from the [latest release](https://github.com/mh-anwar/lumina/releases/latest) on your Android phone (7.0 or newer) and open it. Allow installs from your browser when Android asks, then allow **Nearby devices** when Lumina asks.
 
-2. Copy `build/app/outputs/flutter-apk/app-release.apk` to the phone and open it. Allow installs from that source when Android asks.
+Updates install over the old version and keep your lights.
 
-   The APK is signed with the debug key, which is fine for installing it on your own phone.
-
-3. Open Lumina and allow **Nearby devices** when asked.
+iOS builds but hasn't been tested on an iPhone yet.
 
 ## Add a bulb
 
-1. Reset the bulb: with it on, turn it off and on five times quickly until it flashes.
-2. Tap **Add a light** and pick the bulb (`BLE Bulb_XXXX`). The bulb blinks while Lumina sets it up.
+1. Reset the bulb: with it on, switch it off and on five times quickly until it flashes.
+2. In Lumina, tap **Add a light** and pick the bulb (`BLE Bulb_XXXX`). It blinks while it's being set up, which takes about 10 seconds.
 
-A bulb that's still in another network, such as one set up with nRF Mesh, doesn't appear under **Add a light**. If Lumina connects to one, it tells you to reset it.
+A bulb set up with another app, such as Sengled's or nRF Mesh, has to be reset first.
 
-### Bulbs reset outside the app
+If a bulb gets reset with its light switch later, its tile says **Was reset**. Tap it to set it up again with the same name.
 
-Lumina recognizes your bulbs by their Bluetooth address. When one of them advertises as a new bulb, Lumina marks its light **Was reset**. Tap **Set up again** to add it back with the same name and place in the list. **Add a light** also labels a reset bulb with the light it used to be.
+## Widgets and shortcuts (Android)
 
-## Debugging with real bulbs
+- **Lights on/off** (1×1) switches every light.
+- **Lights and presets** (4×1) adds Relax, Read, Daylight and Night.
 
-**Activity log** (in **Settings**) shows every provisioning and network PDU in both directions, plus decoded access messages. Use **Share** to send it somewhere. The bulb's Composition Data is logged when it's configured.
+Long-press the app icon for the same actions as shortcuts. A tap takes about 0.1 s when Lumina is open and 5–6 s when it isn't. The widget shows **Retry** if no light is in range.
 
-## Widgets and app shortcuts (Android)
-
-Lumina offers two home-screen widgets:
-
-- **Lights on/off** (1×1) toggles every light.
-- **Lights and presets** (4×1) adds Relax, Read, Daylight, and Night.
-
-Long-press the app icon for the same actions as app shortcuts. You can drag a shortcut onto the home screen as its own icon. Some launchers show only four shortcuts, so Night appears only when you add it to the home screen.
-
-Widgets and shortcuts run their action without opening the app.
-
-A tap runs `lib/widget_entry.dart` in a background isolate (`home_widget`):
-- If Lumina is running, the tap is handed to it over the isolate name server and uses its open connection. That takes about 0.1 s.
-- Otherwise the isolate connects, sends one group message and disconnects. That takes about 5–6 s, most of it Android starting the process and opening the Bluetooth link.
-
-The widget shows **…** while it works and **Retry** if no light was in range. The native side is `LuminarWidgets.kt` and `ShortcutActivity.kt` in `android/app/src/main/kotlin/app/luminar/luminar/`. Shortcuts are declared in `android/app/src/main/res/xml/shortcuts.xml`.
-
-Force-stopping Lumina in Android settings turns its widgets off until you open the app again. That's an Android rule for force-stopped apps.
+If you force-stop Lumina in Android settings, its widgets stop working until you open the app again.
 
 ## Backups
 
-**Back up lights** (in **Settings**) produces a `LAMPLIGHT1:` code. Lumina also reads backup codes from the Lamplight web app. Restoring adds 100,000 to the sequence number so bulbs don't reject messages as replays.
+**Settings → Back up lights** gives you a `LAMPLIGHT1:` code. Keep it somewhere private, like a password manager: it holds your network keys. **Restore from backup** on another phone brings your lights back. Codes from the Lamplight web app work too.
 
-## Architecture
+## Troubleshooting
 
-Layered as the Flutter architecture guide recommends: views and view models (MVVM) on top of repositories and services, with use cases for flows that span repositories.
-
-| Path | What it does |
-|---|---|
-| `lib/data/mesh/` | Pure Dart Bluetooth Mesh protocol: key derivation (s1, k1–k4), network PDUs with obfuscation, segmentation and reassembly, proxy SAR, provisioning math, and access messages for every SIG model the bulbs expose. |
-| `lib/data/services/` | Wrappers around the outside world. `BleService` (with the `flutter_reactive_ble` implementation) scans and opens GATT links. `MeshProxyService` is the proxy connection: network and transport layers, request/reply matching, segment acks, group sends. `ProvisioningService` runs PB-GATT. `HomeStore` persists the home in the keystore. `HomeWidgetService` draws the widgets. `ActivityLog` records every PDU. |
-| `lib/data/repositories/` | The single sources of truth. `HomeRepository` (keys, lights, scene names, SEQ), `ConnectionRepository` (finding our proxy, connecting, noticing reset bulbs), `LightRepository` (configuration, the All lights group, control, CTL setup, scheduler, what the lights report), `SceneRepository`, `ProvisioningRepository` (scanning for and provisioning new bulbs), `WidgetRepository` (widget state, and taps passed between isolates). |
-| `lib/domain/models/` | Immutable models (`freezed`): `Home`, `Light`, `LightState`, plus `Preset`, `NearbyBulb`, and `WidgetAction`. |
-| `lib/domain/use_cases/` | `AddLightUseCase` (provision, reconnect as proxy, configure), `ConnectUseCase` (connect, then finish setups and sync states), and `WidgetActionUseCase` (a widget tap while the app isn't running). |
-| `lib/widget_entry.dart` | The background entry point for widget and shortcut taps. |
-| `lib/ui/features/` | One folder per feature (`home`, `add_light`, `activity_log`), each with `view_models/` and `views/`. View models own the user-facing messages; repositories return typed results. |
-| `lib/ui/core/` | Theme and shared widgets. |
-| `lib/config/dependencies.dart` | The object graph, provided to the widget tree with `provider`. Tests build the same graph over simulated bulbs. |
-| `test/` | Mirrors `lib/`. Mesh protocol tests check against independent sources, named in each test file's header. Repository and view model tests run against simulated bulbs that relay over a simulated mesh (`test/support/mock_bulb.dart`, `test/support/harness.dart`). |
-
-After changing a `freezed` model, regenerate with `dart run build_runner build --delete-conflicting-outputs`.
-
-### Supported models
-
-At setup, Lumina reads each bulb's Composition Data and binds its AppKey to every model it supports:
-
-- Generic OnOff
-- Light Lightness
-- Light CTL
-- Light CTL Setup: temperature range and default state
-- Scene and Scene Setup: store, recall, register, delete
-- Scheduler and Scheduler Setup: register and actions
-
-The vendor model (`0x05040000`) is undocumented. `LightRepository.sendRaw` can send it raw bytes.
-
-The bulbs don't expose a Time Server, and the Scheduler needs one to know the current time, so schedules may never fire. The Scheduler messages are implemented and tested against the simulated bulb. Test them on real hardware before building a schedules screen.
+- **No lights found:** make sure the bulbs have power and you're close to one of them. Close nRF Mesh or other light apps, which can hold the connection.
+- **A bulb doesn't show under Add a light:** it's still set up somewhere else. Reset it (five quick off/on cycles).
+- **Something else:** **Settings → Activity log** shows every message to and from the bulbs. **Share** sends it wherever you like.
 
 ## Development
 
-Run the tests:
+<details>
+<summary>Building, tests and project layout</summary>
+
+### Build and test
 
 ```bash
-flutter test
+flutter test                          # unit, repository and widget tests
+flutter build apk --release           # signed with the debug key unless android/key.properties exists
+flutter test tool/screenshots/take_screenshots.dart   # regenerates docs/screenshots/
 ```
 
-To regenerate the README screenshots in `docs/screenshots/`, run the app against simulated bulbs:
+After changing a `freezed` model, run `dart run build_runner build --delete-conflicting-outputs` and commit the generated files.
 
-```bash
-flutter test tool/screenshots/take_screenshots.dart
-```
+CI checks formatting, analysis, tests and generated code on every pull request, and uploads screenshots of the app as a build artifact.
+
+### Layout
+
+The app follows the Flutter architecture guide: views and view models over repositories and services.
+
+| Path | What's there |
+|---|---|
+| `lib/data/mesh/` | Pure Dart Bluetooth Mesh: key derivation, network PDUs, segmentation, proxy, provisioning, access messages. |
+| `lib/data/services/` | Bluetooth (`BleService`), the proxy connection (`MeshProxyService`), provisioning, storage (`HomeStore`), widgets, the activity log. |
+| `lib/data/repositories/` | Sources of truth: home and keys, connection, lights, scenes, provisioning, widgets. |
+| `lib/domain/` | Immutable models and the use cases that span repositories. |
+| `lib/ui/` | One folder per feature (`home`, `add_light`, `activity_log`), plus shared theme and widgets. |
+| `lib/widget_entry.dart` | Background entry point for widget and shortcut taps. |
+| `test/` | Mirrors `lib/`. Protocol tests check against independent test vectors, and everything else runs against simulated bulbs (`test/support/`). |
+
+### Protocol notes
+
+At setup, Lumina reads each bulb's Composition Data and binds its AppKey to Generic OnOff, Light Lightness, Light CTL (and CTL Setup), Scene (and Scene Setup) and Scheduler (and Scheduler Setup).
+
+- The bulbs have no Time Server, so Scheduler messages are implemented but schedules may never fire.
+- The vendor model `0x05040000` is undocumented.
+- Sequence numbers only ever go up. Restoring a backup adds 100,000 so the bulbs don't reject messages as replays.
 
 ### Icon and splash
 
-`tool/brand/render_brand_assets.dart` renders them into `assets/brand/`. To regenerate them for each platform, run these commands in order:
-
 ```bash
 flutter test tool/brand/render_brand_assets.dart
-```
-
-```bash
 dart run flutter_launcher_icons
-```
-
-```bash
 dart run flutter_native_splash:create
 ```
 
 ### iOS
 
-To check that the iOS app builds, without code signing, run:
+`flutter build ios --no-codesign` checks that it builds. To run it on an iPhone, open `ios/Runner.xcworkspace` in Xcode and pick your team under **Signing & Capabilities**. The iOS Simulator has no Bluetooth.
 
-```bash
-flutter build ios --no-codesign
-```
-
-To run it on an iPhone, open `ios/Runner.xcworkspace` in Xcode and choose your team under **Signing & Capabilities**. The iOS Simulator has no Bluetooth, so it can't reach bulbs.
-
-### Android SDK
-
-`compileSdk` is 37 because `permission_handler` and `flutter_reactive_ble` require it. `targetSdk` follows Flutter's default.
+</details>
 
 ## License
 
-Lumina is released under the [MIT License](LICENSE).
+[MIT](LICENSE). The bundled Figtree and Bricolage Grotesque fonts are under the SIL Open Font License (`google_fonts/`), and the icons are Material Icons under Apache 2.0.
 
-The bundled Figtree and Bricolage Grotesque fonts are licensed under the SIL Open Font License; their license files are in `google_fonts/`. The bulb and power icons are from Material Icons, licensed under the Apache License 2.0.
-
-Lumina is an independent project. It isn't affiliated with or endorsed by Sengled. Sengled is a trademark of its owner, and the name is used here only to say which bulbs Lumina works with.
+Lumina isn't affiliated with or endorsed by Sengled. Sengled is a trademark of its owner, used here only to say which bulbs Lumina works with.
