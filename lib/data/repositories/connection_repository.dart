@@ -50,7 +50,14 @@ final class LightsWereReset extends ConnectResult {
 
 final class BluetoothOff extends ConnectResult {
   final String message;
-  const BluetoothOff(this.message);
+  final BluetoothUnavailableReason reason;
+  const BluetoothOff(this.message, [this.reason = BluetoothUnavailableReason.off]);
+}
+
+/// Not tried: the Add a light sheet is scanning, and a connect would stop
+/// its scan.
+final class ConnectBusy extends ConnectResult {
+  const ConnectBusy();
 }
 
 /// The proxy connection into the mesh.
@@ -60,8 +67,9 @@ class ConnectionRepository extends ChangeNotifier {
     required this._proxy,
     required this._home,
     required this._log,
+    ScanHold? scans,
     this.timings = const Timings(),
-  }) {
+  }) : _scans = scans ?? ScanHold() {
     _lostSub = _proxy.lost.listen((_) {
       _set(Connection.off);
       _dropped.add(null);
@@ -72,6 +80,7 @@ class ConnectionRepository extends ChangeNotifier {
   final MeshProxyService _proxy;
   final HomeRepository _home;
   final ActivityLog _log;
+  final ScanHold _scans;
   final Timings timings;
   late final StreamSubscription<void> _lostSub;
   final _dropped = StreamController<void>.broadcast();
@@ -86,6 +95,21 @@ class ConnectionRepository extends ChangeNotifier {
   /// Emits when the connection drops without [disconnect].
   Stream<void> get dropped => _dropped.stream;
 
+  /// Emits when Bluetooth becomes usable after it was not (turned on, or
+  /// allowed).
+  Stream<void> get bluetoothReady {
+    var was = true;
+    return _ble.readyChanges.where((ready) {
+      final rose = ready && !was;
+      was = ready;
+      return rose;
+    });
+  }
+
+  /// Opens the app's page in the system settings, for a permission that
+  /// was denied for good.
+  Future<void> openSettings() => _ble.openSettings();
+
   void _set(Connection s) {
     if (_state == s) return;
     _state = s;
@@ -99,6 +123,10 @@ class ConnectionRepository extends ChangeNotifier {
   Future<ConnectResult> connect() async {
     if (isConnected) return const Connected();
     if (_home.home.lights.isEmpty) return const NoLights();
+    if (_scans.held) {
+      _log.add('Not connecting while Add a light is scanning');
+      return const ConnectBusy();
+    }
     _set(Connection.connecting);
     try {
       await _ble.ensureReady();
@@ -130,7 +158,7 @@ class ConnectionRepository extends ChangeNotifier {
       }
       return foreign > 0 ? const OldSetup() : const ConnectFailed();
     } on BluetoothUnavailable catch (e) {
-      return BluetoothOff(e.message);
+      return BluetoothOff(e.message, e.reason);
     } catch (e) {
       return ConnectFailed('$e');
     } finally {
@@ -211,7 +239,8 @@ class ConnectionRepository extends ChangeNotifier {
         if (known.isNotEmpty && known.keys.every(reset.contains)) break;
       }
     } finally {
-      await _ble.stopScan();
+      // An Add a light scan that started meanwhile replaced ours; leave it.
+      if (!_scans.held) await _ble.stopScan();
     }
     // Ours first, then bulbs that did not identify themselves, then bulbs
     // whose identity did not match (tried last; the proxy's replies decide).

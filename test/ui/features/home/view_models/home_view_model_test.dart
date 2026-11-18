@@ -269,8 +269,10 @@ void main() {
       await settle();
       await h.vm.setPower(h.vm.lights.single, false);
       await h.vm.setPower(h.vm.lights.single, true);
+      await settle(); // widget updates run one at a time, after the change
       expect(h.widgetService.shown.last, WidgetStatus.on);
       await h.vm.toggleAll();
+      await settle();
       expect(h.widgetService.shown.last, WidgetStatus.off);
       expect(h.widgetService.shown, isNot(contains(WidgetStatus.busy)));
       h.vm.dispose();

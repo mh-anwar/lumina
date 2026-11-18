@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumina/data/repositories/connection_repository.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
 import 'package:lumina/data/services/home_store.dart';
 import 'package:lumina/domain/models/light.dart';
 
@@ -51,11 +52,6 @@ void main() {
       final h2 = await Harness.start(ble, store);
       expect(h2.home.home.lightAt(0x11)!.wasReset, isTrue, reason: 'saved');
     });
-  });
-
-  test('has nothing to connect to without lights', () async {
-    final h = await Harness.start(FakeBle([]));
-    expect(await h.connection.connect(), isA<NoLights>());
   });
 
   test('connects straight to our bulb, skipping a stronger foreign one', () async {
@@ -172,5 +168,51 @@ void main() {
     await h.connection.disconnect();
     await settle();
     expect(drops, 1);
+  });
+
+  test('connects by itself when Bluetooth is turned on', () async {
+    final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
+    final ble = FakeBle([bulb]);
+    final h = await Harness.start(ble);
+    await h.vm.start();
+    await h.add(bulb);
+    await h.connection.disconnect();
+    ble.setReady(false);
+
+    final r = await h.connection.connect();
+    expect((r as BluetoothOff).reason, BluetoothUnavailableReason.off);
+    ble.setReady(true);
+    await settle(200);
+    expect(h.connection.isConnected, isTrue);
+    h.vm.dispose();
+  });
+
+  test('does not stop an Add a light scan, and connects after it', () async {
+    final ours = MockBulb('AA:01', 'BLE Bulb_7B2E'), fresh = MockBulb('AA:02', 'BLE Bulb_A9CC');
+    final ble = FakeBle([ours, fresh]);
+    final h = await Harness.start(ble);
+    await h.add(ours);
+    await h.connection.disconnect();
+
+    ble.scansStayOpen = true;
+    var scanDone = false;
+    final found = <String>[];
+    final sub = h.provisioning.scan().listen(
+      (list) => found.addAll(list.map((b) => b.id)),
+      onDone: () => scanDone = true,
+    );
+    await settle();
+    final scans = ble.scans;
+    expect(await h.connection.connect(), isA<ConnectBusy>());
+    expect(ble.scans, scans, reason: 'no scan of its own');
+    expect(scanDone, isFalse, reason: 'the Add a light scan keeps going');
+    expect(found, ['AA:02']);
+
+    await h.provisioning.stopScan();
+    await settle();
+    expect(scanDone, isTrue);
+    ble.scansStayOpen = false;
+    expect(await h.connection.connect(), isA<Connected>());
+    await sub.cancel();
   });
 }

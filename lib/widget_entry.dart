@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:lumina/config/dependencies.dart';
 import 'package:lumina/data/services/ble/reactive_ble_service.dart';
 import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/data/services/timings.dart';
 import 'package:lumina/domain/models/widget_action.dart';
 
 /// Runs in a background isolate when a home-screen widget is tapped.
@@ -16,14 +17,26 @@ import 'package:lumina/domain/models/widget_action.dart';
 Future<void> widgetTapped(Uri? uri) async {
   final action = WidgetAction.fromUri(uri);
   if (action == null) return;
-  final deps = Dependencies(ble: ReactiveBleService(interactive: false), store: SecureHomeStore());
+  const timings = Timings();
+  final deps = Dependencies(
+    ble: ReactiveBleService(interactive: false, timings: timings),
+    store: SecureHomeStore(),
+  );
   final widgets = deps.widgets;
-  final wasOn = await widgets.lastStatus() == WidgetStatus.on;
-  await widgets.show(WidgetStatus.busy);
+  // The One light widget draws its own light; the others all lights.
+  Future<void> show(WidgetStatus s) => switch (action) {
+    ToggleLightAction(:final addr) => widgets.showLight(addr, s),
+    _ => widgets.show(s),
+  };
+  // The last known state, not what the widget shows (busy or Retry).
+  final wasOn = action is ToggleLightAction
+      ? await widgets.lastLightOn(action.addr) ?? false
+      : await widgets.lastOn() ?? await widgets.lastStatus() == WidgetStatus.on;
+  await show(WidgetStatus.busy);
 
   final viaApp = await widgets.askApp(action);
   if (viaApp != null) {
-    await widgets.show(viaApp);
+    await show(viaApp);
     return;
   }
 
@@ -33,12 +46,18 @@ Future<void> widgetTapped(Uri? uri) async {
     status = await deps.widgetAction(action, wasOn: wasOn);
     // Writes are queued in the platform; let the last one go out before
     // the link closes.
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+    await Future<void>.delayed(timings.writeFlush);
   } catch (e) {
     debugPrint('[lumina] Widget action failed: $e');
   } finally {
     await deps.connection.disconnect();
-    await widgets.show(status);
+    await show(status);
+    // Every light followed an all-lights action.
+    if (action is! ToggleLightAction && status != WidgetStatus.unavailable) {
+      for (final l in deps.home.home.ready) {
+        await widgets.showLight(l.addr, status);
+      }
+    }
     deps.dispose();
   }
 }

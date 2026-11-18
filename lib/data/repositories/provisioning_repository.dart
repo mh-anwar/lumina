@@ -4,29 +4,49 @@ import 'package:lumina/data/mesh/bytes.dart';
 import 'package:lumina/data/repositories/home_repository.dart';
 import 'package:lumina/data/services/ble/ble_service.dart';
 import 'package:lumina/data/services/provisioning_service.dart';
+import 'package:lumina/data/services/timings.dart';
 import 'package:lumina/domain/models/light.dart';
 import 'package:lumina/domain/models/nearby_bulb.dart';
 
 /// Finds unprovisioned bulbs and brings them into our network.
 class ProvisioningRepository {
-  ProvisioningRepository({required this._ble, required this._provisioning, required this._home});
+  ProvisioningRepository({
+    required this._ble,
+    required this._provisioning,
+    required this._home,
+    ScanHold? scans,
+    this.timings = const Timings(),
+  }) : _scans = scans ?? ScanHold();
 
   final BleService _ble;
   final ProvisioningService _provisioning;
   final HomeRepository _home;
+  final Timings timings;
+
+  /// Held while [scan] runs, so the connection does not start a scan of
+  /// its own that would replace this one.
+  final ScanHold _scans;
 
   /// Emits the growing list of unprovisioned bulbs with their latest
   /// signal readings. A bulb that was one of our lights (it was reset
   /// outside the app) says which, and its light is marked as reset.
-  /// Errors with BluetoothUnavailable.
-  Stream<List<NearbyBulb>> scan({Duration timeout = const Duration(seconds: 30)}) async* {
-    await _ble.ensureReady();
-    yield* _ble.scan(const {MeshService.provisioning}, timeout: timeout).map((list) {
-      return [
-        for (final b in list)
-          NearbyBulb(id: b.id, name: b.name, rssi: b.rssi, replaces: _wasOurs(b.id)?.name),
-      ];
-    });
+  /// Errors with BluetoothUnavailable. [timeout] defaults to
+  /// [Timings.addLightScan].
+  Stream<List<NearbyBulb>> scan({Duration? timeout}) async* {
+    _scans.hold();
+    try {
+      await _ble.ensureReady();
+      yield* _ble
+          .scan(const {MeshService.provisioning}, timeout: timeout ?? timings.addLightScan)
+          .map((list) {
+            return [
+              for (final b in list)
+                NearbyBulb(id: b.id, name: b.name, rssi: b.rssi, replaces: _wasOurs(b.id)?.name),
+            ];
+          });
+    } finally {
+      _scans.release();
+    }
   }
 
   Light? _wasOurs(String bleId) {

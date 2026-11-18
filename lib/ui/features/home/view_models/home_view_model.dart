@@ -37,6 +37,10 @@ class HomeViewModel extends ChangeNotifier {
       l.addListener(notifyListeners);
     }
     _droppedSub = _connection.dropped.listen((_) => _reconnect());
+    // Bluetooth turned on or allowed: connect without a tap.
+    _readySub = _connection.bluetoothReady.listen((_) {
+      if (loaded && lights.isNotEmpty && !_away && !isConnected) unawaited(connect());
+    });
     addListener(_syncWidgets);
   }
 
@@ -49,6 +53,7 @@ class HomeViewModel extends ChangeNotifier {
   final ActivityLog _log;
   final WidgetRepository _widgets;
   late final StreamSubscription<void> _droppedSub;
+  late final StreamSubscription<void> _readySub;
   StreamSubscription<WidgetRequest>? _widgetSub;
 
   // ---------- state ----------
@@ -223,6 +228,8 @@ class HomeViewModel extends ChangeNotifier {
           _say(_resetMessage(names), error: true);
         case BluetoothOff(:final message):
           _say(message, error: true);
+        case ConnectBusy():
+          _say('');
       }
     } finally {
       _busy = false;
@@ -256,7 +263,10 @@ class HomeViewModel extends ChangeNotifier {
   // ---------- home-screen widgets ----------
 
   void _syncWidgets() {
-    if (!loaded || ready.isEmpty) return;
+    if (!loaded) return;
+    final states = [for (final l in ready) (l.addr, l.name, stateOf(l))];
+    unawaited(_widgets.syncLights([for (final (a, n, s) in states) (a, n, s.known ? s.on : null)]));
+    if (ready.isEmpty) return;
     unawaited(_widgets.show(onCount > 0 ? WidgetStatus.on : WidgetStatus.off));
   }
 
@@ -268,6 +278,11 @@ class HomeViewModel extends ChangeNotifier {
         await toggleAll();
       case ApplyPresetAction(:final preset):
         await applyPreset(preset);
+      case ToggleLightAction(:final addr):
+        final l = ready.where((x) => x.addr == addr).firstOrNull;
+        if (l == null) return WidgetStatus.unavailable;
+        await setPower(l, !stateOf(l).on);
+        return stateOf(l).on ? WidgetStatus.on : WidgetStatus.off;
     }
     return onCount > 0 ? WidgetStatus.on : WidgetStatus.off;
   }
@@ -527,6 +542,7 @@ class HomeViewModel extends ChangeNotifier {
     _widgets.close();
     removeListener(_syncWidgets);
     _droppedSub.cancel();
+    _readySub.cancel();
     for (final l in [_home, _connection, _lights]) {
       l.removeListener(notifyListeners);
     }

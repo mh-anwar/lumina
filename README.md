@@ -43,11 +43,8 @@ If a bulb gets reset with its light switch later, its tile says **Was reset**. T
 ## Widgets and shortcuts (Android)
 
 - **Lights on/off** (1×1) switches every light.
-- **Lights and presets** (4×1) adds Relax, Read, Daylight and Night.
-
-Long-press the app icon for the same actions as shortcuts. A tap takes about 0.1 s when Lumina is open and 5–6 s when it isn't. The widget shows **Retry** if no light is in range.
-
-If you force-stop Lumina in Android settings, its widgets stop working until you open the app again.
+- **Lights and scenes** (4×1) adds Relax, Read, Daylight and Night.
+- **One light** (1×1) switches the light you pick when you add it.
 
 ## Backups
 

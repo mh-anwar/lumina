@@ -40,6 +40,10 @@ class Dependencies {
   final String widgetPort;
 
   late final log = ActivityLog();
+
+  /// Shared by the connection and the Add a light scan, which the
+  /// connection must not interrupt.
+  late final scanHold = ScanHold();
   late final home = HomeRepository(store: store, log: log);
   late final proxy = MeshProxyService(ble: ble, keys: home, log: log, timings: timings);
   late final connection = ConnectionRepository(
@@ -47,6 +51,7 @@ class Dependencies {
     proxy: proxy,
     home: home,
     log: log,
+    scans: scanHold,
     timings: timings,
   );
   late final lights = LightRepository(proxy: proxy, home: home, log: log, timings: timings);
@@ -55,6 +60,8 @@ class Dependencies {
     ble: ble,
     provisioning: ProvisioningService(ble: ble, log: log, timings: timings),
     home: home,
+    scans: scanHold,
+    timings: timings,
   );
   late final connect = ConnectUseCase(connection: connection, lights: lights);
   late final addLight = AddLightUseCase(
@@ -64,9 +71,15 @@ class Dependencies {
     log: log,
     timings: timings,
   );
-  late final widgets = WidgetRepository(service: widgetService, portName: widgetPort);
-  late final widgetAction = WidgetActionUseCase(connection: connection, lights: lights);
-  late final homeViewModel = HomeViewModel(
+  late final widgets = WidgetRepository(
+    service: widgetService,
+    portName: widgetPort,
+    timings: timings,
+  );
+  late final widgetAction = WidgetActionUseCase(connection: connection, lights: lights, home: home);
+  // Made on first use: a widget tap's background isolate never needs it.
+  HomeViewModel? _homeViewModel;
+  HomeViewModel get homeViewModel => _homeViewModel ??= HomeViewModel(
     home: home,
     connection: connection,
     lights: lights,
@@ -98,7 +111,7 @@ class Dependencies {
   ];
 
   void dispose() {
-    homeViewModel.dispose();
+    _homeViewModel?.dispose();
     lights.dispose();
     connection.dispose();
     proxy.dispose();

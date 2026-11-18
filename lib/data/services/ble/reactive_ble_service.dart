@@ -6,6 +6,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/timings.dart';
 
 /// Android reports discovered UUIDs in 128-bit form; compare expanded forms,
 /// as flutter_reactive_ble does internally.
@@ -26,10 +27,14 @@ class ReactiveBleService implements BleService {
 
   /// [interactive] is false in a background isolate (a home-screen widget
   /// tap): permissions are checked there, never requested.
-  ReactiveBleService({FlutterReactiveBle? ble, this.interactive = true})
-    : _ble = ble ?? FlutterReactiveBle();
+  ReactiveBleService({
+    FlutterReactiveBle? ble,
+    this.interactive = true,
+    this.timings = const Timings(),
+  }) : _ble = ble ?? FlutterReactiveBle();
 
   final bool interactive;
+  final Timings timings;
 
   // Both are released in _endScan().
   StreamSubscription<DiscoveredDevice>? _scan; // ignore: cancel_subscriptions
@@ -45,11 +50,13 @@ class ReactiveBleService implements BleService {
       if (r.values.any((s) => s.isPermanentlyDenied)) {
         throw BluetoothUnavailable(
           'Lumina needs the Nearby devices permission. Allow it in Settings > Apps > Lumina > Permissions.',
+          BluetoothUnavailableReason.permissionPermanentlyDenied,
         );
       }
       if (r.values.any((s) => !s.isGranted)) {
         throw BluetoothUnavailable(
           'Lumina needs the Nearby devices permission to find your lights.',
+          BluetoothUnavailableReason.permissionDenied,
         );
       }
     }
@@ -63,15 +70,25 @@ class ReactiveBleService implements BleService {
       case BleStatus.ready:
         return;
       case BleStatus.poweredOff:
-        throw BluetoothUnavailable('Bluetooth is off. Turn it on and try again.');
+        throw BluetoothUnavailable(
+          'Bluetooth is off. Turn it on and try again.',
+          BluetoothUnavailableReason.off,
+        );
       case BleStatus.locationServicesDisabled:
         throw BluetoothUnavailable(
           'Turn on Location so Lumina can scan for lights (Android 11 and lower).',
+          BluetoothUnavailableReason.locationOff,
         );
       case BleStatus.unauthorized:
-        throw BluetoothUnavailable('Lumina is not allowed to use Bluetooth. Allow it in Settings.');
+        throw BluetoothUnavailable(
+          'Lumina is not allowed to use Bluetooth. Allow it in Settings.',
+          BluetoothUnavailableReason.permissionDenied,
+        );
       case BleStatus.unsupported:
-        throw BluetoothUnavailable('This phone does not support Bluetooth Low Energy.');
+        throw BluetoothUnavailable(
+          'This phone does not support Bluetooth Low Energy.',
+          BluetoothUnavailableReason.unsupported,
+        );
       case BleStatus.unknown:
         throw BluetoothUnavailable('Bluetooth is not ready yet. Try again.');
     }
@@ -79,13 +96,21 @@ class ReactiveBleService implements BleService {
 
   Future<BleStatus> _status() => _ble.statusStream
       .firstWhere((s) => s != BleStatus.unknown)
-      .timeout(const Duration(seconds: 3), onTimeout: () => _ble.status);
+      .timeout(timings.bleStatus, onTimeout: () => _ble.status);
 
   @override
-  Stream<List<FoundBulb>> scan(
-    Set<MeshService> services, {
-    Duration timeout = const Duration(seconds: 10),
-  }) {
+  Stream<bool> get readyChanges => _ble.statusStream
+      .where((s) => s != BleStatus.unknown)
+      .map((s) => s == BleStatus.ready)
+      .distinct();
+
+  @override
+  Future<void> openSettings() async {
+    await openAppSettings();
+  }
+
+  @override
+  Stream<List<FoundBulb>> scan(Set<MeshService> services, {Duration? timeout}) {
     Uuid uuid(MeshService s) => s == MeshService.provisioning ? _provService : _proxyService;
     final wanted = [for (final s in services) uuid(s)];
     _endScan(); // detaches the previous scan before returning
@@ -135,7 +160,7 @@ class ReactiveBleService implements BleService {
             }
           },
         );
-    _scanTimer = Timer(timeout, _endScan);
+    _scanTimer = Timer(timeout ?? timings.defaultScan, _endScan);
     return out.stream;
   }
 
@@ -169,7 +194,7 @@ class ReactiveBleService implements BleService {
     final done = Completer<void>();
     late final StreamSubscription<ConnectionStateUpdate> conn;
     conn = _ble
-        .connectToDevice(id: id, connectionTimeout: const Duration(seconds: 12))
+        .connectToDevice(id: id, connectionTimeout: timings.bleConnect)
         .listen(
           (u) {
             if (u.connectionState == DeviceConnectionState.connected && !connected.isCompleted) {
@@ -199,7 +224,7 @@ class ReactiveBleService implements BleService {
       // The plugin's own timeout does not fire in every state; never wait
       // forever for a connection.
       await connected.future.timeout(
-        const Duration(seconds: 15),
+        timings.bleConnectGuard,
         onTimeout: () => throw TimeoutException('Connection timed out'),
       );
       Future<Service?> find() async {
@@ -254,7 +279,7 @@ class ReactiveBleService implements BleService {
           );
       // The subscription enables notifications asynchronously; give the
       // CCCD write time to land before the first request goes out.
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await Future<void>.delayed(timings.notifySettle);
 
       return _ReactiveLink(
         id: id,
