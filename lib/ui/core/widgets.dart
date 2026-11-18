@@ -526,3 +526,72 @@ class PresetSwatch extends StatelessWidget {
     );
   }
 }
+
+/// The whites the bulbs can make, from warm to daylight.
+const whiteTones = [
+  (name: 'Warm', kelvin: 2700),
+  (name: 'Soft', kelvin: 3000),
+  (name: 'Neutral', kelvin: 4000),
+  (name: 'Cool', kelvin: 5000),
+  (name: 'Daylight', kelvin: 6500),
+];
+
+/// A row of white tones to pick from; the one nearest [kelvin] is marked.
+class WhiteToneSwatches extends StatelessWidget {
+  final int kelvin;
+  final ValueChanged<int> onPick;
+  const WhiteToneSwatches({super.key, required this.kelvin, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    final nearest = whiteTones.reduce(
+      (a, b) => (a.kelvin - kelvin).abs() <= (b.kelvin - kelvin).abs() ? a : b,
+    );
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        for (final t in whiteTones)
+          Semantics(
+            button: true,
+            selected: t == nearest,
+            label: '${t.name}, ${t.kelvin} K',
+            excludeSemantics: true,
+            child: InkWell(
+              onTap: () => onPick(t.kelvin),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                child: Column(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: kelvinColor(t.kelvin),
+                        border: Border.all(
+                          color: t == nearest ? p.text : p.line,
+                          width: t == nearest ? 2.5 : 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      t.name,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: t == nearest ? p.text : p.muted,
+                        fontWeight: t == nearest ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

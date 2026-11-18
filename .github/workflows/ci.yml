@@ -35,6 +35,15 @@ jobs:
         if: ${{ !cancelled() }}
         run: flutter test
 
+      # Regenerates the freezed code and prints any difference to commit.
+      - name: Check generated code
+        if: ${{ !cancelled() }}
+        run: |
+          git stash --include-untracked --quiet || true
+          git checkout -- .
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code -- '*.freezed.dart'
+
       # Renders the app against simulated bulbs, so a PR's UI can be reviewed
       # without a local Flutter SDK. Download "screenshots" from the run page.
       - name: Render screenshots

@@ -399,6 +399,36 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> forgetScene(int scene) => _scenes.forget(scene);
 
+  // ---------- the user's presets ----------
+
+  /// Presets the user made. The built-in ones are [presets].
+  List<Preset> get customPresets => _home.home.presets;
+
+  /// Shows a brightness and warmth on every light while a preset is being
+  /// made, without asking to connect.
+  void preview({int? level, int? kelvin}) {
+    if (isConnected) _lights.setAll(level: level, kelvin: kelvin);
+  }
+
+  /// Saves a preset that sets every light to [level] and [kelvin]. Returns
+  /// false if the name can't be used.
+  Future<bool> savePreset(String name, {required int level, required int kelvin}) async {
+    final n = name.trim();
+    if (n.isEmpty) {
+      _say('Give the scene a name.', error: true);
+      return false;
+    }
+    if (presets.any((p) => p.name.toLowerCase() == n.toLowerCase())) {
+      _say('$n is already a built-in scene. Pick another name.', error: true);
+      return false;
+    }
+    await _home.savePreset(Preset(n, level, kelvin));
+    _say('Saved $n. Tap it to use it.');
+    return true;
+  }
+
+  Future<void> deletePreset(Preset p) => _home.removePreset(p.name);
+
   // ---------- backup ----------
 
   String backupCode() => _home.backupCode();

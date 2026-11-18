@@ -101,14 +101,12 @@ class _LightSheetState extends State<_LightSheet> {
                     c.setLight(l, level: v);
                   }
                 },
-                onKelvin: (v) {
-                  if (l == null) {
-                    c.setAll(kelvin: v);
-                  } else {
-                    c.setLight(l, kelvin: v);
-                  }
-                },
+                onKelvin: _setKelvin,
               ),
+              if (l == null ? c.ready.any((x) => x.hasCtl) : l.hasCtl) ...[
+                const SizedBox(height: 4),
+                WhiteToneSwatches(kelvin: l == null ? c.allKelvin : l.kelvin, onPick: _setKelvin),
+              ],
             ],
             if (l != null && l.usable && l.has('ctlSetup')) ...[
               const SizedBox(height: 8),
@@ -150,6 +148,15 @@ class _LightSheetState extends State<_LightSheet> {
         ),
       ),
     );
+  }
+
+  void _setKelvin(int kelvin) {
+    final l = _light;
+    if (l == null) {
+      c.setAll(kelvin: kelvin);
+    } else {
+      c.setLight(l, kelvin: kelvin);
+    }
   }
 
   Future<void> _useAsDefault(Light l) async {

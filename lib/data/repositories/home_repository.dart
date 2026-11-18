@@ -10,6 +10,7 @@ import 'package:lumina/data/services/home_store.dart';
 import 'package:lumina/data/services/mesh_proxy_service.dart';
 import 'package:lumina/domain/models/home.dart';
 import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/preset.dart';
 
 /// The single source of truth for the home: network keys, lights and
 /// scene names. Persists every change and hands out sequence numbers.
@@ -90,6 +91,14 @@ class HomeRepository extends ChangeNotifier implements MeshKeyring {
 
   Future<void> removeLight(int addr) =>
       update((h) => h.copyWith(lights: [...h.lights.where((l) => l.addr != addr)]));
+
+  /// Adds [preset], replacing any of the user's presets with its name.
+  Future<void> savePreset(Preset preset) => update(
+    (h) => h.copyWith(presets: [...h.presets.where((p) => p.name != preset.name), preset]),
+  );
+
+  Future<void> removePreset(String name) =>
+      update((h) => h.copyWith(presets: [...h.presets.where((p) => p.name != name)]));
 
   // ---------- persistence ----------
 

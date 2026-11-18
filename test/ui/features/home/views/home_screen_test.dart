@@ -109,6 +109,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(vm.stateOf(vm.lights.single).on, isTrue);
 
+      // New makes a scene from a brightness and white for every light.
+      await tester.tap(find.text('New'));
+      await tester.pumpAndSettle();
+      expect(find.text('New scene'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'Cozy');
+      await tester.tap(find.text('Warm'));
+      await tester.tap(find.text('Save scene'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pumpAndSettle();
+      expect(find.text('New scene'), findsNothing);
+      expect(find.text('Cozy'), findsOneWidget);
+      expect(vm.customPresets.single.kelvin, 2700);
+
       // The tune button opens the light's own controls.
       await tester.tap(find.byTooltip('More for BLE Bulb_7B2E'));
       await tester.pumpAndSettle();

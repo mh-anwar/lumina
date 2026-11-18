@@ -301,4 +301,36 @@ void main() {
       'Daylight',
     ]);
   });
+
+  test('saves, uses and deletes the user\'s own presets', () async {
+    final bulb = MockBulb('AA:01', 'BLE Bulb_A9CB');
+    final h = await Harness.start(FakeBle([bulb]));
+    await h.vm.addLight(nearby(bulb));
+
+    expect(await h.vm.savePreset('  ', level: 40, kelvin: 2900), isFalse);
+    expect(h.vm.status, 'Give the scene a name.');
+    expect(await h.vm.savePreset('relax', level: 40, kelvin: 2900), isFalse);
+    expect(h.vm.statusIsError, isTrue);
+
+    expect(await h.vm.savePreset(' Dinner ', level: 40, kelvin: 2900), isTrue);
+    expect(h.vm.status, 'Saved Dinner. Tap it to use it.');
+    expect(h.vm.customPresets, [const Preset('Dinner', 40, 2900)]);
+
+    // Saving the same name again replaces it.
+    await h.vm.savePreset('Dinner', level: 60, kelvin: 3000);
+    expect(h.vm.customPresets, [const Preset('Dinner', 60, 3000)]);
+
+    await h.vm.applyPreset(h.vm.customPresets.single);
+    await settle();
+    expect([bulb.on, bulb.kelvin], [true, 3000]);
+
+    // They survive a restart.
+    await h.home.save();
+    final h2 = Harness(FakeBle([bulb]), h.store);
+    await h2.home.load();
+    expect(h2.vm.customPresets, [const Preset('Dinner', 60, 3000)]);
+
+    await h.vm.deletePreset(h.vm.customPresets.single);
+    expect(h.vm.customPresets, isEmpty);
+  });
 }

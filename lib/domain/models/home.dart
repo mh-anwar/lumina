@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'light.dart';
+import 'preset.dart';
 
 part 'home.freezed.dart';
 
@@ -29,6 +30,10 @@ abstract class Home with _$Home {
 
     /// Saved scene names by scene number. The web app's backups omit them.
     @Default({}) Map<int, String> scenes,
+
+    /// Presets the user made, after the built-in ones. The web app's
+    /// backups omit them.
+    @Default([]) List<Preset> presets,
   }) = _Home;
 
   /// Lights that take commands.
@@ -88,6 +93,10 @@ abstract class Home with _$Home {
           },
           _ => const {},
         },
+        presets: switch (j['presets']) {
+          final List<Object?> l => [...l.map(Preset.fromJson).nonNulls],
+          _ => const [],
+        },
       );
     }
     throw const FormatException('Missing keys or lights');
@@ -103,6 +112,8 @@ abstract class Home with _$Home {
     'nextAddr': nextAddr,
     'lights': [for (final l in lights) l.toJson()],
     'scenes': {for (final e in scenes.entries) '${e.key}': e.value},
+    // Only when there are some, so other backups look exactly as before.
+    if (presets.isNotEmpty) 'presets': [for (final p in presets) p.toJson()],
   };
 
   static const backupPrefix = 'LAMPLIGHT1:';

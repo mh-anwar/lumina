@@ -6,6 +6,7 @@ import 'package:lumina/domain/models/preset.dart';
 import 'package:lumina/ui/features/add_light/views/add_light_sheet.dart';
 import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
 import 'package:lumina/ui/features/home/views/light_sheet.dart';
+import 'package:lumina/ui/features/home/views/new_scene_sheet.dart';
 import 'package:lumina/ui/features/home/views/settings_screen.dart';
 import 'package:lumina/ui/core/theme.dart';
 import 'package:lumina/ui/core/widgets.dart';
@@ -104,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           SliverToBoxAdapter(
             child: SectionHeader(
               'Scenes',
-              trailing: c.scenes.isEmpty
+              trailing: c.scenes.isEmpty && c.customPresets.isEmpty
                   ? null
                   : TextButton(
                       onPressed: () => setState(() => _editingScenes = !_editingScenes),
@@ -159,27 +160,36 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _sceneRow(BuildContext context) {
     final p = Palette.of(context);
-    // Saved scenes first, so they show without scrolling.
+    final editing = _editingScenes;
+    // New first, then the user's own, so they show without scrolling.
     final cards = <Widget>[
+      if (!editing)
+        SceneCard(
+          label: 'New',
+          swatch: Icon(Icons.add_rounded, size: 24, color: p.text),
+          onTap: () => showNewSceneSheet(context, c),
+        ),
       for (final e in c.scenes.entries)
         SceneCard(
           label: e.value,
           swatch: Icon(Icons.bookmark_outline_rounded, size: 24, color: p.muted),
           onTap: () => c.recallScene(e.key),
-          onDelete: _editingScenes ? () => _deleteScene(context, e.key, e.value) : null,
+          onDelete: editing ? () => _deleteScene(context, e.key, e.value) : null,
         ),
-      for (final Preset preset in presets)
+      for (final preset in c.customPresets)
         SceneCard(
           label: preset.name,
           swatch: PresetSwatch(preset),
           onTap: () => c.applyPreset(preset),
+          onDelete: editing ? () => _deletePreset(context, preset) : null,
         ),
-      if (c.showScenes && !_editingScenes)
-        SceneCard(
-          label: 'Save current',
-          swatch: Icon(Icons.add_rounded, size: 24, color: p.text),
-          onTap: () => _saveScene(context),
-        ),
+      if (!editing)
+        for (final preset in presets)
+          SceneCard(
+            label: preset.name,
+            swatch: PresetSwatch(preset),
+            onTap: () => c.applyPreset(preset),
+          ),
     ];
     return SizedBox(
       height: 84,
@@ -205,37 +215,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
     if (!ok) return;
     await c.forgetScene(scene);
-    if (c.scenes.isEmpty && mounted) setState(() => _editingScenes = false);
+    _stopEditingIfEmpty();
   }
 
-  Future<void> _saveScene(BuildContext context) async {
-    final name = TextEditingController(text: 'Scene ${c.scenes.length + 1}');
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Save scene', style: display(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Saves how every light looks now, so you can bring it back with one tap.'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: name,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(labelText: 'Name'),
-              onSubmitted: (_) => Navigator.pop(ctx, true),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
-        ],
-      ),
+  Future<void> _deletePreset(BuildContext context, Preset preset) async {
+    final ok = await confirm(
+      context,
+      'Delete ${preset.name}?',
+      'The scene is removed from this phone.',
+      action: 'Delete',
+      danger: true,
     );
-    if (ok == true) await c.saveScene(name.text);
+    if (!ok) return;
+    await c.deletePreset(preset);
+    _stopEditingIfEmpty();
+  }
+
+  void _stopEditingIfEmpty() {
+    if (c.scenes.isEmpty && c.customPresets.isEmpty && mounted) {
+      setState(() => _editingScenes = false);
+    }
   }
 }
 
