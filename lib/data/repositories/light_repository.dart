@@ -409,7 +409,7 @@ class LightRepository extends ChangeNotifier {
     await _home.removeLight(addr);
   }
 
-  /// Forgets every light's reported state (after restore or start over).
+  /// Forgets every light's reported state (after a restore or forgetting all lights).
   void resetStates() {
     _states.clear();
     notifyListeners();

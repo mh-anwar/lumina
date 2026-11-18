@@ -97,9 +97,9 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       ListTile(
                         leading: Icon(Icons.delete_forever_outlined, color: p.danger),
-                        title: Text('Start over', style: TextStyle(color: p.danger)),
-                        subtitle: const Text('Forget every light on this phone'),
-                        onTap: () => _startOver(context),
+                        title: Text('Forget all lights', style: TextStyle(color: p.danger)),
+                        subtitle: const Text('Removes every light from this phone'),
+                        onTap: () => _forgetAll(context),
                       ),
                     ],
                   ),
@@ -162,16 +162,16 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _startOver(BuildContext context) async {
+  Future<void> _forgetAll(BuildContext context) async {
     final ok = await confirm(
       context,
-      'Start over?',
-      'This phone forgets all your lights. Each bulb will need a reset before you can add it again.',
-      action: 'Start over',
+      'Forget all lights?',
+      'This phone forgets every light. To add a bulb again later, reset it first: switch it off and on five times.',
+      action: 'Forget all',
       danger: true,
     );
     if (!ok) return;
-    await viewModel.startOver();
+    await viewModel.forgetAll();
     if (context.mounted) Navigator.pop(context);
   }
 }

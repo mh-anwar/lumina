@@ -90,7 +90,7 @@ class HomeViewModel extends ChangeNotifier {
   String statusLine(Light l) {
     final s = stateOf(l);
     if (l.wasReset) return 'Was reset';
-    if (!l.configured) return 'Needs one more setup step';
+    if (!l.configured) return 'Setup not finished';
     if (!isConnected && !s.known) return 'Not connected';
     if (isConnected && !s.responding) return 'Not responding';
     if (!s.on) return 'Off';
@@ -519,11 +519,11 @@ class HomeViewModel extends ChangeNotifier {
     return true;
   }
 
-  Future<void> startOver() async {
+  Future<void> forgetAll() async {
     await _connection.disconnect();
-    await _home.startOver();
+    await _home.forgetAll();
     _lights.resetStates();
-    _say('Starting fresh. Tap Add a light.');
+    _say('All lights forgotten.');
   }
 
   @override

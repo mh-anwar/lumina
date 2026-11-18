@@ -122,7 +122,7 @@ void main() {
     expect(h.vm.status, contains('finish setup'));
     expect(h.vm.statusIsError, isTrue);
     final l = h.vm.lights.single;
-    expect(h.vm.statusLine(l), 'Needs one more setup step');
+    expect(h.vm.statusLine(l), 'Setup not finished');
 
     bulb.answersAppKeyAdd = true;
     await h.vm.finishSetup(l);
@@ -140,7 +140,7 @@ void main() {
     expect(h.vm.busy, isFalse);
   });
 
-  test('remove, scenes, backup and start over say what happened', () async {
+  test('remove, scenes, backup and forgetting all lights say what happened', () async {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
     final h = await Harness.start(FakeBle([bulb]));
     await h.vm.addLight(nearby(bulb));
@@ -165,10 +165,10 @@ void main() {
     expect(h.vm.isConnected, isFalse);
     expect(h.vm.status, startsWith('No lights found'));
 
-    await h.vm.startOver();
+    await h.vm.forgetAll();
     expect(h.vm.lights, isEmpty);
     expect(h.vm.scenes, isEmpty);
-    expect(h.vm.status, 'Starting fresh. Tap Add a light.');
+    expect(h.vm.status, 'All lights forgotten.');
   });
 
   group('lights reset outside the app', () {
