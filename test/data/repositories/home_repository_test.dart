@@ -22,6 +22,7 @@ void main() {
     // A new app on the same store starts at or above the reservation.
     final h2 = await Harness.start(ble, store);
     expect(h2.home.home.seq, greaterThanOrEqualTo(saved['seq'] as int));
+    await h2.vm.start();
     expect(h2.vm.isConnected, isTrue, reason: 'restoring connects: ${h2.vm.status}');
     final before = bulb.on;
     await h2.vm.setPower(h2.single, !before);
@@ -55,7 +56,8 @@ void main() {
     expect(await h2.vm.restore(code), isTrue);
     expect(h2.all, hasLength(1));
     expect(h2.home.home.netKey, h.home.home.netKey);
-    expect(h2.home.home.seq, seq + Home.restoreSeqMargin);
+    // Restoring connects at once, which sends messages and reserves more SEQ.
+    expect(h2.home.home.seq, greaterThanOrEqualTo(seq + Home.restoreSeqMargin));
     expect(h2.vm.isConnected, isTrue, reason: 'restoring connects: ${h2.vm.status}');
     await h2.vm.setPower(h2.single, true);
     await settle();
