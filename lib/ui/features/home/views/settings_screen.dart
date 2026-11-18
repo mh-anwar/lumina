@@ -157,15 +157,43 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _forgetAll(BuildContext context) async {
-    final ok = await confirm(
-      context,
-      'Forget all lights?',
-      'This phone forgets every light. To add a bulb again later, reset it first: switch it off and on five times.',
-      action: 'Forget all',
-      danger: true,
-    );
-    if (!ok) return;
-    await viewModel.forgetAll();
+    if (!viewModel.isConnected) {
+      final ok = await confirm(
+        context,
+        'Forget all lights?',
+        'This phone forgets every light. To add a bulb again later, reset it first: switch it off and on five times.',
+        action: 'Forget all',
+        danger: true,
+      );
+      if (!ok) return;
+      await viewModel.forgetAll();
+    } else {
+      final p = Palette.of(context);
+      // Connected: offer to reset the bulbs too, so they can be added again
+      // without five off/on cycles each.
+      final reset = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Forget all lights?', style: display(20)),
+          content: const Text(
+            'Reset the lights first and they are ready to add again. Forget only, and each one needs five off/on cycles before it can be added again.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Forget only'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Reset and forget', style: TextStyle(color: p.danger)),
+            ),
+          ],
+        ),
+      );
+      if (reset == null) return;
+      await viewModel.forgetAll(reset: reset);
+    }
     if (context.mounted) Navigator.pop(context);
   }
 }

@@ -14,14 +14,14 @@ Lumina is a fork of [Luminar](https://github.com/snwagbata/luminar) by snwagbata
 
 ## What it does
 
-- **Tap a light to switch it, drag across it to dim it.** The tune button opens warmth, white tones, rename and remove.
-- **All lights at once** from one tile, in a single group message so they change together.
+- **Tap a light to switch it, drag across it to dim it.** The tune button opens warmth, color (on color bulbs), rename and remove.
+- **All lights at once** from one tile, in a single group message so they change together. Dragging it dims the lights that are on and leaves the others off.
 - **Scenes:** built-in ones (Relax, Read, Daylight, Night), your own brightness-and-white scenes, and snapshots of each light stored on the bulbs.
 - **Home-screen widgets and app shortcuts** (Android) that work without opening the app.
 - **Backups:** a code that moves your lights to another phone.
 - **Private by design:** no internet permission, no analytics, no accounts.
 
-The supported bulbs are tunable white, from warm (2700 K) to daylight (6500 K). They have no color model.
+Tunable white bulbs go from warm (2700 K) to daylight (6500 K). Color bulbs also get hue and saturation.
 
 ## Install
 
@@ -71,7 +71,7 @@ flutter test tool/screenshots/take_screenshots.dart   # regenerates docs/screens
 
 After changing a `freezed` model, run `dart run build_runner build --delete-conflicting-outputs` and commit the generated files.
 
-CI checks formatting, analysis, tests and generated code on every pull request, and uploads screenshots of the app as a build artifact.
+CI checks formatting, analysis, tests and generated code on every push to `main`, and uploads screenshots of the app as a build artifact.
 
 ### Layout
 
@@ -89,7 +89,7 @@ The app follows the Flutter architecture guide: views and view models over repos
 
 ### Protocol notes
 
-At setup, Lumina reads each bulb's Composition Data and binds its AppKey to Generic OnOff, Light Lightness, Light CTL (and CTL Setup), Scene (and Scene Setup) and Scheduler (and Scheduler Setup).
+At setup, Lumina reads each bulb's Composition Data and binds its AppKey to Generic OnOff, Light Lightness, Light CTL (and CTL Setup), Light HSL on color bulbs, Scene (and Scene Setup) and Scheduler (and Scheduler Setup).
 
 - The bulbs have no Time Server, so Scheduler messages are implemented but schedules may never fire.
 - The vendor model `0x05040000` is undocumented.

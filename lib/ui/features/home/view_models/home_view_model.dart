@@ -99,6 +99,16 @@ class HomeViewModel extends ChangeNotifier {
   bool get showRetry =>
       _connectFailed && !busy && connection == Connection.off && lights.isNotEmpty;
 
+  bool _needsSettings = false;
+
+  /// Whether the header offers Open settings instead: Bluetooth permission
+  /// was denied for good, so only the app's system settings can allow it.
+  bool get showOpenSettings => _needsSettings && showRetry;
+
+  /// Opens the app's page in the system settings. Allowing Bluetooth there
+  /// connects without a tap ([ConnectionRepository.bluetoothReady]).
+  Future<void> openSettings() => _connection.openSettings();
+
   List<Light> get lights => _home.home.lights;
   List<Light> get ready => _home.home.ready;
   LightState stateOf(Light l) => _lights.stateOf(l.addr);
@@ -269,6 +279,7 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _connectNow() async {
     _connectFailed = false;
+    _needsSettings = false;
     _say(lights.isEmpty ? '' : 'Looking for your lights…');
     final ConnectResult result;
     try {
@@ -305,8 +316,9 @@ class HomeViewModel extends ChangeNotifier {
         _say('Could not connect. Close nRF Mesh or other light apps, then try again.', error: true);
       case LightsWereReset(:final names):
         _say(_resetMessage(names), error: true);
-      case BluetoothOff(:final message):
+      case BluetoothOff(:final message, :final reason):
         _connectFailed = true;
+        _needsSettings = reason == BluetoothUnavailableReason.permissionPermanentlyDenied;
         _say(message, error: true);
       case ConnectBusy():
         // An Add a light scan is running; connecting would stop it.
@@ -720,7 +732,7 @@ class HomeViewModel extends ChangeNotifier {
   void preview({int? level, int? kelvin}) {
     if (!isConnected) return;
     _previewed = true;
-    _lights.setAll(level: level, kelvin: kelvin);
+    _lights.setAll(level: level, kelvin: kelvin, every: true);
   }
 
   /// When the New scene sheet closes: unless a preset was [saved], puts
@@ -803,7 +815,16 @@ class HomeViewModel extends ChangeNotifier {
     return true;
   }
 
-  Future<void> forgetAll() async {
+  /// Forgets every light. With [reset], first resets the lights that answer
+  /// (Node Reset), so they are ready to add again without five off/on
+  /// cycles; lights that don't answer are forgotten anyway.
+  Future<void> forgetAll({bool reset = false}) async {
+    if (reset && isConnected) {
+      _say('Resetting your lights…');
+      for (final l in [...lights]) {
+        if (!l.wasReset) await _lights.remove(l.addr);
+      }
+    }
     await _connection.disconnect();
     await _home.forgetAll();
     _lights.resetStates();

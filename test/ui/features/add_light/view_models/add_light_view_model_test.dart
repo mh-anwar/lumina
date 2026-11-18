@@ -66,9 +66,21 @@ void main() {
     vm.dispose();
   });
 
-  test('describes signal strength', () {
-    expect(AddLightViewModel.signal(-50), 'Very close');
-    expect(AddLightViewModel.signal(-70), 'Nearby');
-    expect(AddLightViewModel.signal(-90), 'Far away, move closer');
+  test('drops a bulb that a whole scan did not hear', () async {
+    final gone = MockBulb('AA:02', 'BLE Bulb_A9CB');
+    final ble = FakeBle([MockBulb('AA:01', 'BLE Bulb_7B2E'), gone]);
+    final h = await Harness.start(ble);
+    final vm = AddLightViewModel(
+      provisioning: h.provisioning,
+      rescanPause: const Duration(milliseconds: 10),
+    );
+    vm.scan();
+    await settle();
+    expect(vm.found, hasLength(2));
+    ble.bulbs.remove(gone);
+    await settle();
+    expect(vm.found.map((b) => b.name), ['BLE Bulb_7B2E']);
+    await vm.stop();
+    vm.dispose();
   });
 }
