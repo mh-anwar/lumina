@@ -331,7 +331,7 @@ class _StatusBanner extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                 decoration: BoxDecoration(
                   color: error ? p.danger.withValues(alpha: 0.1) : p.surface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(radiusSmall),
                   border: Border.all(color: error ? p.danger.withValues(alpha: 0.35) : p.line),
                 ),
                 child: Row(
@@ -393,7 +393,7 @@ class _EmptyState extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       decoration: BoxDecoration(
         color: p.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radiusMedium),
         border: Border.all(color: p.line),
       ),
       child: Column(
@@ -436,7 +436,7 @@ class _AddTile extends StatelessWidget {
       color: Colors.transparent,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radiusMedium),
         side: BorderSide(color: p.line, width: 1.5),
       ),
       child: InkWell(

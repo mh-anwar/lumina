@@ -52,7 +52,7 @@ class GradientSlider extends StatelessWidget {
         ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            trackHeight: 14,
+            trackHeight: 6,
             trackShape: _GradientTrack(gradient, p.line),
             thumbColor: p.surface,
             thumbShape: _Thumb(p.text),
@@ -110,7 +110,7 @@ class _Thumb extends SliderComponentShape {
   final Color ring;
   const _Thumb(this.ring);
   @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(30, 30);
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(22, 22);
 
   @override
   void paint(
@@ -130,15 +130,15 @@ class _Thumb extends SliderComponentShape {
     final c = context.canvas;
     c.drawCircle(
       center + const Offset(0, 1),
-      15,
+      11,
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.25)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+        ..color = Colors.black.withValues(alpha: 0.2)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
     );
-    c.drawCircle(center, 15, Paint()..color = sliderTheme.thumbColor!);
+    c.drawCircle(center, 11, Paint()..color = sliderTheme.thumbColor!);
     c.drawCircle(
       center,
-      14,
+      10,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
@@ -346,11 +346,14 @@ class _LightTileState extends State<LightTile> {
         onHorizontalDragEnd: canDim ? _dragEnd : null,
         onHorizontalDragCancel: canDim ? _dragEnd : null,
         child: Material(
-          color: p.surface,
+          // A light that's on takes a soft tint of its own white.
+          color: lit
+              ? Color.alphaBlend(w.color.withValues(alpha: dark ? 0.1 : 0.18), p.surface)
+              : p.surface,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: lit ? w.color.withValues(alpha: 0.6) : p.line),
+            borderRadius: BorderRadius.circular(radiusMedium),
+            side: BorderSide(color: p.line),
           ),
           child: InkWell(
             onTap: w.onTap == null
@@ -363,18 +366,34 @@ class _LightTileState extends State<LightTile> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: AnimatedFractionallySizedBox(
-                    duration: drag != null ? Duration.zero : const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
-                    widthFactor: lit ? level : 0,
-                    heightFactor: 1,
-                    child: ColoredBox(color: w.color.withValues(alpha: dark ? 0.2 : 0.32)),
+                // Brightness, as a thin bar along the bottom.
+                if (lit)
+                  PositionedDirectional(
+                    start: 14,
+                    end: 14,
+                    bottom: 10,
+                    height: 3,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: ColoredBox(
+                        color: p.line,
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: AnimatedFractionallySizedBox(
+                            duration: drag != null
+                                ? Duration.zero
+                                : const Duration(milliseconds: 250),
+                            curve: Curves.easeOut,
+                            widthFactor: level,
+                            heightFactor: 1,
+                            child: ColoredBox(color: p.text),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 6, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -382,8 +401,8 @@ class _LightTileState extends State<LightTile> {
                         children: [
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
-                            width: 38,
-                            height: 38,
+                            width: 36,
+                            height: 36,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: w.attention
@@ -398,7 +417,7 @@ class _LightTileState extends State<LightTile> {
                               color: w.attention
                                   ? p.danger
                                   : lit
-                                  ? const Color(0xFF1C2436)
+                                  ? const Color(0xFF181715)
                                   : p.muted,
                             ),
                           ),
@@ -474,7 +493,7 @@ class SceneCard extends StatelessWidget {
         color: p.surface,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(radiusMedium),
           side: BorderSide(color: p.line),
         ),
         child: InkWell(
