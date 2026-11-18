@@ -36,9 +36,7 @@ class HomeViewModel extends ChangeNotifier {
     for (final l in [_home, _connection, _lights]) {
       l.addListener(notifyListeners);
     }
-    _droppedSub = _connection.dropped.listen(
-      (_) => _say('Disconnected. Tap Connect to reconnect.'),
-    );
+    _droppedSub = _connection.dropped.listen((_) => _reconnect());
     addListener(_syncWidgets);
   }
 
@@ -218,6 +216,17 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> disconnect() => _connection.disconnect();
 
+  /// After an unexpected disconnect: reconnects at once while the app is in
+  /// front, otherwise when it comes back ([lifecycleChanged]).
+  Future<void> _reconnect() async {
+    if (_away || _busy) {
+      _say('Disconnected.');
+      return;
+    }
+    _log.add('Disconnected. Reconnecting.');
+    await connect();
+  }
+
   /// Connect, or disconnect when connected.
   Future<void> toggleConnection() => isConnected ? disconnect() : connect();
 
@@ -230,11 +239,7 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Runs a widget tap through this (running) app's connection.
   Future<WidgetStatus> runWidgetAction(WidgetAction action) async {
-    for (var i = 0; i < 300 && _busy; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-    if (!isConnected) await connect();
-    if (!isConnected) return WidgetStatus.unavailable;
+    if (!await _connected()) return WidgetStatus.unavailable;
     switch (action) {
       case ToggleAllAction():
         await toggleAll();
@@ -329,32 +334,53 @@ class HomeViewModel extends ChangeNotifier {
 
   // ---------- control ----------
 
-  bool _guard() {
+  /// Connects first when needed, so no command waits on a Connect button.
+  /// Returns false if the lights can't be reached.
+  Future<bool> _connected() async {
     if (isConnected) return true;
-    _say('Tap Connect first.', error: true);
-    return false;
+    for (var i = 0; i < 300 && _busy; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    if (!isConnected) await connect();
+    return isConnected;
   }
 
   Future<void> toggleAll() async {
-    if (_guard()) await _lights.toggleAll();
+    if (await _connected()) await _lights.toggleAll();
   }
 
   /// All-lights sliders.
   void setAll({int? level, int? kelvin}) {
-    if (_guard()) _lights.setAll(level: level, kelvin: kelvin);
+    if (isConnected) {
+      _lights.setAll(level: level, kelvin: kelvin);
+    } else {
+      unawaited(
+        _connected().then((ok) {
+          if (ok) _lights.setAll(level: level, kelvin: kelvin);
+        }),
+      );
+    }
   }
 
   Future<void> applyPreset(Preset p) async {
-    if (_guard()) await _lights.applyPreset(p);
+    if (await _connected()) await _lights.applyPreset(p);
   }
 
   Future<void> setPower(Light l, bool on) async {
-    if (_guard()) await _lights.setPower(l.addr, on);
+    if (await _connected()) await _lights.setPower(l.addr, on);
   }
 
   /// One light's sliders.
   void setLight(Light l, {int? level, int? kelvin}) {
-    if (_guard()) _lights.setLevel(l.addr, level: level, kelvin: kelvin);
+    if (isConnected) {
+      _lights.setLevel(l.addr, level: level, kelvin: kelvin);
+    } else {
+      unawaited(
+        _connected().then((ok) {
+          if (ok) _lights.setLevel(l.addr, level: level, kelvin: kelvin);
+        }),
+      );
+    }
   }
 
   Future<void> rename(Light l, String name) => _lights.rename(l.addr, name);
@@ -388,7 +414,7 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> recallScene(int scene) async {
-    if (!_guard()) return;
+    if (!await _connected()) return;
     final addrs = await _scenes.recall(scene);
     _lights.assumeOn(addrs);
     // The recalled state is unknown until the lights report it.
@@ -451,7 +477,7 @@ class HomeViewModel extends ChangeNotifier {
     await _home.restore(code);
     _lights.resetStates();
     final n = lights.length;
-    _say('Restored $n light${n == 1 ? '' : 's'}. Tap Connect.');
+    _say('Restored $n light${n == 1 ? '' : 's'}.');
     return true;
   }
 
