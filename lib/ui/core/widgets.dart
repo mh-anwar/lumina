@@ -200,7 +200,6 @@ class LightSliders extends StatelessWidget {
   }
 }
 
-
 /// Asks before doing [action]. Returns true if the user confirmed.
 Future<bool> confirm(
   BuildContext context,
@@ -254,7 +253,7 @@ class SectionHeader extends StatelessWidget {
                 ),
               ),
             ),
-            if (trailing case final t?) t,
+            ?trailing,
           ],
         ),
       ),

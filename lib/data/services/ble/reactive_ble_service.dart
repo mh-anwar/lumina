@@ -69,9 +69,7 @@ class ReactiveBleService implements BleService {
           'Turn on Location so Lumina can scan for lights (Android 11 and lower).',
         );
       case BleStatus.unauthorized:
-        throw BluetoothUnavailable(
-          'Lumina is not allowed to use Bluetooth. Allow it in Settings.',
-        );
+        throw BluetoothUnavailable('Lumina is not allowed to use Bluetooth. Allow it in Settings.');
       case BleStatus.unsupported:
         throw BluetoothUnavailable('This phone does not support Bluetooth Low Energy.');
       case BleStatus.unknown:

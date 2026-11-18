@@ -78,18 +78,13 @@ class _LightSheetState extends State<_LightSheet> {
                     icon: const Icon(Icons.edit_outlined),
                   ),
                 if (usable)
-                  Switch(
-                    value: on,
-                    onChanged: (v) => l == null ? c.toggleAll() : c.setPower(l, v),
-                  ),
+                  Switch(value: on, onChanged: (v) => l == null ? c.toggleAll() : c.setPower(l, v)),
               ],
             ),
             if (l != null && !usable) ...[
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: c.busy
-                    ? null
-                    : () => l.wasReset ? c.setUpAgain(l) : c.finishSetup(l),
+                onPressed: c.busy ? null : () => l.wasReset ? c.setUpAgain(l) : c.finishSetup(l),
                 child: Text(c.actionLabel(l) ?? ''),
               ),
             ],
@@ -191,9 +186,7 @@ class _LightSheetState extends State<_LightSheet> {
     final ok = await confirm(
       context,
       'Remove ${l.name}?',
-      c.isConnected
-          ? 'The bulb will be reset so it can be added again later.'
-          : 'You are not connected, so the bulb keeps its setup. Reset it afterwards (five quick off/on cycles) if you want to add it again.',
+      c.isConnected ? 'The bulb will be reset so it can be added again later.' : 'You are not connected, so the bulb keeps its setup. Reset it afterwards (five quick off/on cycles) if you want to add it again.',
       action: 'Remove',
       danger: true,
     );

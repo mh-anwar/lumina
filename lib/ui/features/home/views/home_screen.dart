@@ -152,28 +152,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       attention: attention,
       action: c.actionLabel(l),
       onTap: tap,
-      onLevel: l.usable && (l.hasLightness || l.hasCtl)
-          ? (v) => c.setLight(l, level: v)
-          : null,
+      onLevel: l.usable && (l.hasLightness || l.hasCtl) ? (v) => c.setLight(l, level: v) : null,
       onOpen: () => showLightSheet(context, c, addr: l.addr),
     );
   }
 
   Widget _sceneRow(BuildContext context) {
     final p = Palette.of(context);
+    // Saved scenes first, so they show without scrolling.
     final cards = <Widget>[
-      for (final Preset preset in presets)
-        SceneCard(
-          label: preset.name,
-          swatch: PresetSwatch(preset),
-          onTap: () => c.applyPreset(preset),
-        ),
       for (final e in c.scenes.entries)
         SceneCard(
           label: e.value,
           swatch: Icon(Icons.bookmark_outline_rounded, size: 24, color: p.muted),
           onTap: () => c.recallScene(e.key),
           onDelete: _editingScenes ? () => _deleteScene(context, e.key, e.value) : null,
+        ),
+      for (final Preset preset in presets)
+        SceneCard(
+          label: preset.name,
+          swatch: PresetSwatch(preset),
+          onTap: () => c.applyPreset(preset),
         ),
       if (c.showScenes && !_editingScenes)
         SceneCard(
@@ -299,9 +298,9 @@ class _Header extends StatelessWidget {
           ),
           IconButton(
             tooltip: 'Settings',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => SettingsScreen(viewModel: c)),
-            ),
+            onPressed: () =>
+                Navigator.of(context)
+                    .push(MaterialPageRoute<void>(builder: (_) => SettingsScreen(viewModel: c))),
             icon: const Icon(Icons.settings_outlined),
           ),
         ],
@@ -403,7 +402,10 @@ class _EmptyState extends StatelessWidget {
         children: [
           Text('No lights yet', style: display(20)),
           const SizedBox(height: 4),
-          Text('Set up your first bulb. It takes about 10 seconds.', style: TextStyle(color: p.muted)),
+          Text(
+            'Set up your first bulb. It takes about 10 seconds.',
+            style: TextStyle(color: p.muted),
+          ),
           step(1, 'Turn the bulb on, then off and on five times quickly until it flashes.'),
           step(2, 'Tap Add a light and pick the bulb.'),
           const SizedBox(height: 18),

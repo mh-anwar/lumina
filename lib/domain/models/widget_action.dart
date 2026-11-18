@@ -19,7 +19,7 @@ sealed class WidgetAction {
   Uri toUri();
 
   static WidgetAction? fromUri(Uri? uri) {
-    if (uri == null || uri.scheme != 'lumina') return null;
+    if (uri == null || uri.scheme != 'luminar') return null;
     return switch (uri.host) {
       'toggle' => const ToggleAllAction(),
       'preset' => switch (presets.where((p) => p.name == uri.queryParameters['name'])) {
@@ -44,5 +44,5 @@ final class ApplyPresetAction extends WidgetAction {
   const ApplyPresetAction(this.preset);
 
   @override
-  Uri toUri() => Uri(scheme: 'lumina', host: 'preset', queryParameters: {'name': preset.name});
+  Uri toUri() => Uri(scheme: 'luminar', host: 'preset', queryParameters: {'name': preset.name});
 }
