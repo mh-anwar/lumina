@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       status: c.statusLine(l),
       on: l.configured && s.on,
       level: l.level,
-      color: kelvinColor(l.kelvin),
+      color: lookColor(kelvin: l.kelvin, hue: l.inColor ? l.hue : null, saturation: l.saturation),
       attention: attention,
       action: c.actionLabel(l),
       onTap: tap,

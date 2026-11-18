@@ -264,7 +264,18 @@ class LightRepository extends ChangeNotifier {
   // ---------- control ----------
 
   /// The model and message that set [l] to its level and temperature.
-  static (String, List<int>)? _levelMsg(Light l, int tid) => l.hasCtl
+  /// Hue in degrees to Light HSL Hue (0–65535).
+  static int toHue(int degrees) => ((degrees % 360) / 360 * 65536).round() % 65536;
+
+  /// Saturation in percent to Light HSL Saturation (0–65535).
+  static int toSaturation(int pct) => (pct.clamp(0, 100) / 100 * 65535).round();
+
+  static (String, List<int>)? _levelMsg(Light l, int tid) => l.inColor
+      ? (
+          'hsl',
+          Msg.hslSet(toLightness(l.level), toHue(l.hue ?? 0), toSaturation(l.saturation), tid),
+        )
+      : l.hasCtl
       ? ('ctl', Msg.ctlSet(toLightness(l.level), l.kelvin, tid))
       : l.hasLightness
       ? ('lightness', Msg.lightnessSet(toLightness(l.level), tid))
@@ -310,14 +321,27 @@ class LightRepository extends ChangeNotifier {
 
   Future<void> _sendLevelAll() => _sendToAll(_ready, _levelMsg);
 
-  Light _withLevel(Light l, int? level, int? kelvin) => l.copyWith(
+  /// [l] with a new brightness and/or look. A temperature switches it to
+  /// white; a hue switches it to color.
+  Light _withLevel(Light l, int? level, int? kelvin, {int? hue, int? saturation}) => l.copyWith(
     level: level?.clamp(1, 100) ?? l.level,
     kelvin: kelvin?.clamp(minKelvin, maxKelvin) ?? l.kelvin,
+    hue: hue != null && l.hasHsl
+        ? hue % 360
+        : kelvin != null
+        ? null
+        : l.hue,
+    saturation: saturation?.clamp(0, 100) ?? l.saturation,
   );
 
-  /// Updates one light's brightness and/or temperature (from a slider).
-  void setLevel(int addr, {int? level, int? kelvin}) {
-    unawaited(_home.updateLight(addr, (l) => _withLevel(l, level, kelvin)));
+  /// Updates one light's brightness, temperature or color (from a slider).
+  void setLevel(int addr, {int? level, int? kelvin, int? hue, int? saturation}) {
+    unawaited(
+      _home.updateLight(
+        addr,
+        (l) => _withLevel(l, level, kelvin, hue: hue, saturation: saturation),
+      ),
+    );
     _setState(addr, (s) => s.copyWith(on: true));
     notifyListeners();
     _perLight
@@ -385,7 +409,7 @@ class LightRepository extends ChangeNotifier {
     await _home.removeLight(addr);
   }
 
-  /// Forgets every light's reported state (after restore or start over).
+  /// Forgets every light's reported state (after a restore or forgetting all lights).
   void resetStates() {
     _states.clear();
     notifyListeners();

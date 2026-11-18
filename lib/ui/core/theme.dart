@@ -6,9 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 /// Corner radii: small for controls, medium for tiles and cards.
 const radiusSmall = 8.0, radiusMedium = 12.0;
 
-/// Lumina's palette: ink on warm paper in light mode, graphite in dark mode.
-/// The interface itself stays black and white; color comes only from lights
-/// that are on ([kelvinColor]).
+/// Lumina's palette: neutral system grays, light or black. Lights that are
+/// off are muted gray tiles; lights that are on are bright tiles ([litTile])
+/// tinted with their own color ([lookColor]).
 @immutable
 class Palette extends ThemeExtension<Palette> {
   final Color bg, surface, text, muted, line, off, danger, on;
@@ -24,23 +24,23 @@ class Palette extends ThemeExtension<Palette> {
   });
 
   static const dark = Palette(
-    bg: Color(0xFF111111),
-    surface: Color(0xFF1A1A1A),
-    text: Color(0xFFECEAE6),
-    muted: Color(0xFF8F8B85),
-    line: Color(0xFF2A2927),
-    off: Color(0xFF2E2D2B),
-    danger: Color(0xFFEF8F86),
+    bg: Color(0xFF000000),
+    surface: Color(0xFF1C1C1E),
+    text: Color(0xFFF2F2F7),
+    muted: Color(0xFF8E8E93),
+    line: Color(0xFF2C2C2E),
+    off: Color(0xFF2C2C2E),
+    danger: Color(0xFFFF6961),
   );
 
   static const light = Palette(
-    bg: Color(0xFFF4F2EE),
+    bg: Color(0xFFF2F2F7),
     surface: Color(0xFFFFFFFF),
-    text: Color(0xFF181715),
-    muted: Color(0xFF6F6A63),
-    line: Color(0xFFE2DED7),
-    off: Color(0xFFEAE7E1),
-    danger: Color(0xFFB3261E),
+    text: Color(0xFF1C1C1E),
+    muted: Color(0xFF6C6C70),
+    line: Color(0xFFE5E5EA),
+    off: Color(0xFFE5E5EA),
+    danger: Color(0xFFD70015),
   );
 
   static Palette of(BuildContext context) => Theme.of(context).extension<Palette>()!;
@@ -65,19 +65,28 @@ class Palette extends ThemeExtension<Palette> {
   }
 }
 
-TextStyle display(double size, {Color? color}) => GoogleFonts.bricolageGrotesque(
+/// Titles: the body typeface, bold and slightly tightened.
+TextStyle display(double size, {Color? color}) => GoogleFonts.figtree(
   fontSize: size,
   fontWeight: FontWeight.w700,
   height: 1.15,
+  letterSpacing: -0.3,
   color: color,
 );
+
+/// A tile that's on: nearly white in both themes, with a hint of its light's
+/// color, so on and off read at a glance.
+Color litTile(Color light) => Color.alphaBlend(light.withValues(alpha: 0.14), Colors.white);
+
+/// Text on a [litTile], which is light in both themes.
+const litText = Color(0xFF1C1C1E), litMuted = Color(0xFF5C5C61);
 
 ThemeData buildTheme(Brightness b) {
   final p = b == Brightness.dark ? Palette.dark : Palette.light;
   final base = ThemeData(
     brightness: b,
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF8A8580), brightness: b).copyWith(
+    colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF8E8E93), brightness: b).copyWith(
       surface: p.surface,
       onSurface: p.text,
       primary: p.text,
@@ -167,3 +176,8 @@ Color kelvinColor(int k) {
   int c(double v) => v.round().clamp(0, 255);
   return Color.fromARGB(255, c(r), c(g), c(b));
 }
+
+/// The color a light shows: its hue when it's in color, else its white.
+Color lookColor({required int kelvin, int? hue, int saturation = 100}) => hue == null
+    ? kelvinColor(kelvin)
+    : HSVColor.fromAHSV(1, (hue % 360).toDouble(), saturation.clamp(0, 100) / 100, 1).toColor();

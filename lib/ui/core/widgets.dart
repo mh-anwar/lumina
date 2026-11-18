@@ -162,6 +162,9 @@ class LightSliders extends StatelessWidget {
   final bool showWarmth;
   final ValueChanged<int> onLevel;
   final ValueChanged<int>? onKelvin;
+
+  /// The brightness track's color when the light shows a color.
+  final Color? color;
   const LightSliders({
     super.key,
     required this.level,
@@ -169,6 +172,7 @@ class LightSliders extends StatelessWidget {
     required this.onLevel,
     this.onKelvin,
     this.showWarmth = true,
+    this.color,
   });
 
   @override
@@ -181,7 +185,7 @@ class LightSliders extends StatelessWidget {
           value: level.toDouble(),
           min: 1,
           max: 100,
-          gradient: brightGradient(context, kelvinColor(kelvin)),
+          gradient: brightGradient(context, color ?? kelvinColor(kelvin)),
           onChanged: (v) => onLevel(v.round()),
         ),
         if (showWarmth && onKelvin != null)
@@ -346,15 +350,9 @@ class _LightTileState extends State<LightTile> {
         onHorizontalDragEnd: canDim ? _dragEnd : null,
         onHorizontalDragCancel: canDim ? _dragEnd : null,
         child: Material(
-          // A light that's on takes a soft tint of its own white.
-          color: lit
-              ? Color.alphaBlend(w.color.withValues(alpha: dark ? 0.1 : 0.18), p.surface)
-              : p.surface,
+          color: lit ? litTile(w.color) : (dark ? p.surface : p.off),
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMedium),
-            side: BorderSide(color: p.line),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusMedium)),
           child: InkWell(
             onTap: w.onTap == null
                 ? null
@@ -376,7 +374,7 @@ class _LightTileState extends State<LightTile> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(2),
                       child: ColoredBox(
-                        color: p.line,
+                        color: const Color(0x1F000000),
                         child: Align(
                           alignment: AlignmentDirectional.centerStart,
                           child: AnimatedFractionallySizedBox(
@@ -386,7 +384,7 @@ class _LightTileState extends State<LightTile> {
                             curve: Curves.easeOut,
                             widthFactor: level,
                             heightFactor: 1,
-                            child: ColoredBox(color: p.text),
+                            child: const ColoredBox(color: litText),
                           ),
                         ),
                       ),
@@ -409,7 +407,7 @@ class _LightTileState extends State<LightTile> {
                                   ? p.danger.withValues(alpha: 0.14)
                                   : lit
                                   ? w.color
-                                  : p.off,
+                                  : (dark ? p.off : p.surface),
                             ),
                             child: Icon(
                               w.attention ? Icons.priority_high_rounded : w.icon,
@@ -427,7 +425,11 @@ class _LightTileState extends State<LightTile> {
                               tooltip: 'More for ${w.name}',
                               visualDensity: VisualDensity.compact,
                               onPressed: open,
-                              icon: Icon(Icons.tune_rounded, size: 20, color: p.muted),
+                              icon: Icon(
+                                Icons.tune_rounded,
+                                size: 20,
+                                color: lit ? litMuted : p.muted,
+                              ),
                             ),
                         ],
                       ),
@@ -436,7 +438,11 @@ class _LightTileState extends State<LightTile> {
                         w.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: lit ? litText : p.text,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -445,7 +451,11 @@ class _LightTileState extends State<LightTile> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13.5,
-                          color: w.attention ? p.danger : p.muted,
+                          color: w.attention
+                              ? p.danger
+                              : lit
+                              ? litMuted
+                              : p.muted,
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
@@ -612,5 +622,100 @@ class WhiteToneSwatches extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+/// Colors to pick from, by hue in degrees.
+const colorTones = [
+  (name: 'Red', hue: 0),
+  (name: 'Orange', hue: 30),
+  (name: 'Yellow', hue: 55),
+  (name: 'Green', hue: 120),
+  (name: 'Cyan', hue: 185),
+  (name: 'Blue', hue: 225),
+  (name: 'Purple', hue: 275),
+  (name: 'Pink', hue: 320),
+];
+
+/// Hue and saturation sliders, with a row of colors to pick from.
+class ColorControls extends StatelessWidget {
+  final int hue, saturation;
+  final ValueChanged<int> onHue, onSaturation;
+  const ColorControls({
+    super.key,
+    required this.hue,
+    required this.saturation,
+    required this.onHue,
+    required this.onSaturation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    final full = lookColor(kelvin: 0, hue: hue);
+    final nearest = colorTones.reduce((a, b) => _gap(a.hue) <= _gap(b.hue) ? a : b);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GradientSlider(
+          label: 'Color',
+          valueText: '$hue°',
+          value: hue.toDouble(),
+          min: 0,
+          max: 359,
+          gradient: LinearGradient(
+            colors: [for (var h = 0; h <= 360; h += 60) lookColor(kelvin: 0, hue: h)],
+          ),
+          onChanged: (v) => onHue(v.round()),
+        ),
+        GradientSlider(
+          label: 'Saturation',
+          valueText: '$saturation%',
+          value: saturation.toDouble(),
+          min: 0,
+          max: 100,
+          gradient: LinearGradient(colors: [Colors.white, full]),
+          onChanged: (v) => onSaturation(v.round()),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final t in colorTones)
+              Semantics(
+                button: true,
+                selected: t == nearest && saturation >= 50,
+                label: t.name,
+                excludeSemantics: true,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () {
+                    onHue(t.hue);
+                    if (saturation < 50) onSaturation(100);
+                  },
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: lookColor(kelvin: 0, hue: t.hue),
+                      border: Border.all(
+                        color: t == nearest && saturation >= 50 ? p.text : p.line,
+                        width: t == nearest && saturation >= 50 ? 2.5 : 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  int _gap(int h) {
+    final d = (h - hue).abs() % 360;
+    return d > 180 ? 360 - d : d;
   }
 }

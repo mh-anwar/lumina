@@ -51,6 +51,17 @@ void main() {
     expect(bulb.kelvin, 4000);
   });
 
+  test('restoring a backup connects at once', () async {
+    final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
+    final h = await Harness.start(FakeBle([bulb]));
+    await h.vm.addLight(nearby(bulb));
+    final code = h.vm.backupCode();
+    await h.vm.disconnect();
+    expect(await h.vm.restore(code), isTrue);
+    expect(h.vm.isConnected, isTrue);
+    expect(h.vm.status, 'Restored 1 light.');
+  });
+
   test('connects by itself when a command needs it', () async {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
     final h = await Harness.start(FakeBle([bulb]));
@@ -111,7 +122,8 @@ void main() {
     expect(h.vm.status, contains('finish setup'));
     expect(h.vm.statusIsError, isTrue);
     final l = h.vm.lights.single;
-    expect(h.vm.statusLine(l), 'Needs one more setup step');
+    expect(h.vm.statusLine(l), 'Setup not finished');
+    expect(h.vm.actionLabel(l), 'Finish setup');
 
     bulb.answersAppKeyAdd = true;
     await h.vm.finishSetup(l);
@@ -129,7 +141,7 @@ void main() {
     expect(h.vm.busy, isFalse);
   });
 
-  test('remove, scenes, backup and start over say what happened', () async {
+  test('remove, scenes, backup and forgetting all lights say what happened', () async {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E');
     final h = await Harness.start(FakeBle([bulb]));
     await h.vm.addLight(nearby(bulb));
@@ -149,13 +161,15 @@ void main() {
     expect(h.vm.lights, isEmpty);
 
     expect(await h.vm.restore(code), isTrue);
-    expect(h.vm.status, 'Restored 1 light.');
     expect(h.vm.lights, hasLength(1));
+    // Restoring connects at once; the removed bulb was reset, so it's gone.
+    expect(h.vm.isConnected, isFalse);
+    expect(h.vm.status, startsWith('No lights found'));
 
-    await h.vm.startOver();
+    await h.vm.forgetAll();
     expect(h.vm.lights, isEmpty);
     expect(h.vm.scenes, isEmpty);
-    expect(h.vm.status, 'Starting fresh. Tap Add a light.');
+    expect(h.vm.status, 'All lights forgotten.');
   });
 
   group('lights reset outside the app', () {
@@ -171,6 +185,7 @@ void main() {
       expect(h.vm.statusIsError, isTrue);
       final l = h.vm.lights.single;
       expect(h.vm.statusLine(l), 'Was reset');
+      expect(h.vm.actionLabel(l), 'Set up again');
 
       await h.vm.setUpAgain(l);
       expect(h.vm.status, 'BLE Bulb_A9CB is ready.');
@@ -307,8 +322,12 @@ void main() {
     expect(h.vm.allStatus, '1 of 2 on · ${h.vm.lights.first.level}%');
     await h.vm.applyPreset(presets.firstWhere((p) => p.name == 'Read'));
     expect(h.vm.allStatus, 'All on · 90%');
-    expect(h.vm.actionLabel(h.vm.lights.first), isNull);
-    expect(h.vm.needsAction(h.vm.lights.first), isFalse);
+    expect(
+      [(0, 100), (350, 100), (225, 80), (120, 30), (90, 5)].map(
+        (c) => HomeViewModel.colorName(c.$1, c.$2),
+      ),
+      ['Red', 'Red', 'Blue', 'Pale green', 'White'],
+    );
     expect([2700, 3300, 4500, 6500].map(HomeViewModel.warmth), [
       'Warm',
       'Neutral',

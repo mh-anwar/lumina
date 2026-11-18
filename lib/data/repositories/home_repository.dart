@@ -44,7 +44,7 @@ class HomeRepository extends ChangeNotifier implements MeshKeyring {
     await _replace(h ?? _create());
   }
 
-  /// Replaces the whole home (restore, start over) and saves it at once.
+  /// Replaces the whole home (restore, forget all) and saves it at once.
   Future<void> _replace(Home h) async {
     _home = h;
     _netKeys = NetKeys.derive(hex(h.netKey), hex(h.appKey));
@@ -142,7 +142,7 @@ class HomeRepository extends ChangeNotifier implements MeshKeyring {
   Future<void> restore(String code) => _replace(Home.fromBackupCode(code));
 
   /// Forgets every light and starts a new network.
-  Future<void> startOver() => _replace(_create());
+  Future<void> forgetAll() => _replace(_create());
 
   // ---------- MeshKeyring ----------
 

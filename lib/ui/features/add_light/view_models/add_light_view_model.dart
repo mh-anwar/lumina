@@ -30,7 +30,12 @@ class AddLightViewModel extends ChangeNotifier {
   bool get scanning => _scanning;
   String? get error => _error;
 
+  bool _stopped = false;
+
+  /// Looks for bulbs until [stop], starting a new scan whenever one ends, so
+  /// a bulb reset while the sheet is open shows up without a Scan again tap.
   void scan() {
+    _stopped = false;
     unawaited(_sub?.cancel());
     _scanning = true;
     _error = null;
@@ -40,6 +45,10 @@ class AddLightViewModel extends ChangeNotifier {
     _rssi.clear();
     _found = const [];
     notifyListeners();
+    _listen();
+  }
+
+  void _listen() {
     _sub = _provisioning.scan().listen(
       (list) {
         _update(list);
@@ -51,6 +60,7 @@ class AddLightViewModel extends ChangeNotifier {
         notifyListeners();
       },
       onDone: () {
+        if (!_stopped && _error == null) return _listen();
         _scanning = false;
         notifyListeners();
       },
@@ -72,6 +82,7 @@ class AddLightViewModel extends ChangeNotifier {
   }
 
   Future<void> stop() async {
+    _stopped = true;
     await _sub?.cancel();
     _sub = null;
     await _provisioning.stopScan();

@@ -34,6 +34,13 @@ class MockBulb {
   bool on = false;
   int lightness = 30000, kelvin = 3000;
 
+  /// Light HSL hue and saturation (0–65535), for bulbs with [Models.hsl].
+  int hue = 0, saturation = 0;
+
+  /// The page number in Composition Data Status. Bulb E5AC's firmware
+  /// answers a page 0 request with page 0's data under another number.
+  int compositionPage = 0;
+
   /// Test knobs.
   bool dropFirstSegmented = false;
 
@@ -343,7 +350,7 @@ class MockBulb {
     } else if (op == Op.compositionGet && isDev) {
       if (!answersComposition) return;
       _reply(src, [
-        0x02, 0, // opcode, page
+        0x02, compositionPage, // opcode, page
         ...le16(0x0000), ...le16(0x0001), ...le16(0x0001), ...le16(10), ...le16(0x0003),
         ...le16(0), sigModels.length, 1,
         for (final m in sigModels) ...le16(m),
@@ -408,6 +415,14 @@ class MockBulb {
       lightness = u16le(a, 2);
       kelvin = u16le(a, 4);
       on = lightness > 0;
+    } else if (!isDev && (op == Op.hslSet || op == Op.hslSetUnack) && _accepts(Models.hsl, dst)) {
+      lightness = u16le(a, 2);
+      hue = u16le(a, 4);
+      saturation = u16le(a, 6);
+      on = lightness > 0;
+      if (op == Op.hslSet) {
+        _reply(src, [0x82, 0x78, ...le16(lightness), ...le16(hue), ...le16(saturation)]);
+      }
     }
   }
 

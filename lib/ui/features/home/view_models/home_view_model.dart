@@ -90,11 +90,34 @@ class HomeViewModel extends ChangeNotifier {
   String statusLine(Light l) {
     final s = stateOf(l);
     if (l.wasReset) return 'Was reset';
-    if (!l.configured) return 'Needs one more setup step';
+    if (!l.configured) return 'Setup not finished';
     if (!isConnected && !s.known) return 'Not connected';
     if (isConnected && !s.responding) return 'Not responding';
     if (!s.on) return 'Off';
-    return '${l.level}%${l.hasCtl ? ' · ${warmth(l.kelvin)}' : ''}';
+    final look = switch (l.hue) {
+      final h? when l.inColor => ' · ${colorName(h, l.saturation)}',
+      _ when l.hasCtl => ' · ${warmth(l.kelvin)}',
+      _ => '',
+    };
+    return '${l.level}%$look';
+  }
+
+  /// A color in words, from its hue in degrees and saturation in percent.
+  static String colorName(int hue, int saturation) {
+    if (saturation < 15) return 'White';
+    final h = hue % 360;
+    final name = switch (h) {
+      < 15 => 'Red',
+      < 40 => 'Orange',
+      < 65 => 'Yellow',
+      < 160 => 'Green',
+      < 200 => 'Cyan',
+      < 255 => 'Blue',
+      < 290 => 'Purple',
+      < 340 => 'Pink',
+      _ => 'Red',
+    };
+    return saturation < 50 ? 'Pale ${name.toLowerCase()}' : name;
   }
 
   /// A light that needs the user before it can be controlled.
@@ -376,14 +399,16 @@ class HomeViewModel extends ChangeNotifier {
     if (await _connected()) await _lights.setPower(l.addr, on);
   }
 
-  /// One light's sliders.
-  void setLight(Light l, {int? level, int? kelvin}) {
+  /// One light's sliders: brightness, white temperature, or color.
+  void setLight(Light l, {int? level, int? kelvin, int? hue, int? saturation}) {
+    void send() =>
+        _lights.setLevel(l.addr, level: level, kelvin: kelvin, hue: hue, saturation: saturation);
     if (isConnected) {
-      _lights.setLevel(l.addr, level: level, kelvin: kelvin);
+      send();
     } else {
       unawaited(
         _connected().then((ok) {
-          if (ok) _lights.setLevel(l.addr, level: level, kelvin: kelvin);
+          if (ok) send();
         }),
       );
     }
@@ -483,15 +508,17 @@ class HomeViewModel extends ChangeNotifier {
     await _home.restore(code);
     _lights.resetStates();
     final n = lights.length;
-    _say('Restored $n light${n == 1 ? '' : 's'}.');
+    // Connect straight away; if that fails, its message says why.
+    await connect();
+    if (isConnected) _say('Restored $n light${n == 1 ? '' : 's'}.');
     return true;
   }
 
-  Future<void> startOver() async {
+  Future<void> forgetAll() async {
     await _connection.disconnect();
-    await _home.startOver();
+    await _home.forgetAll();
     _lights.resetStates();
-    _say('Starting fresh. Tap Add a light.');
+    _say('All lights forgotten.');
   }
 
   @override

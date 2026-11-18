@@ -11,6 +11,8 @@ abstract final class Models {
   static const lightness = 0x1300;
   static const ctl = 0x1303;
   static const ctlSetup = 0x1304;
+  static const hsl = 0x1307;
+  static const hslSetup = 0x1308;
   static const scene = 0x1203;
   static const sceneSetup = 0x1204;
   static const scheduler = 0x1206;
@@ -23,6 +25,8 @@ abstract final class Models {
     'lightness': lightness,
     'ctl': ctl,
     'ctlSetup': ctlSetup,
+    'hsl': hsl,
+    'hslSetup': hslSetup,
     'scene': scene,
     'sceneSetup': sceneSetup,
     'scheduler': scheduler,
@@ -67,6 +71,12 @@ abstract final class Op {
   static const ctlGet = 0x825D;
   static const ctlSet = 0x825E;
   static const ctlSetUnack = 0x825F;
+
+  // Light HSL (Mesh Model 1.0, 6.3.3)
+  static const hslGet = 0x826D;
+  static const hslSet = 0x8276;
+  static const hslSetUnack = 0x8277;
+  static const hslStatus = 0x8278;
   static const ctlStatus = 0x8260;
   static const ctlTempRangeGet = 0x8262;
   static const ctlTempRangeStatus = 0x8263;
@@ -189,6 +199,27 @@ abstract final class Msg {
     tid & 0xff,
     if (transition != null) ...[transitionTime(transition), 0],
   ];
+  // ---------- Light HSL ----------
+
+  static List<int> hslGet() => _op(Op.hslGet);
+
+  /// Light HSL Set: lightness, hue and saturation, each 0–65535.
+  static List<int> hslSet(
+    int lightness,
+    int hue,
+    int saturation,
+    int tid, {
+    bool ack = false,
+    Duration? transition,
+  }) => [
+    ..._op(ack ? Op.hslSet : Op.hslSetUnack),
+    ...le16(lightness),
+    ...le16(hue),
+    ...le16(saturation),
+    tid & 0xff,
+    if (transition != null) ...[transitionTime(transition), 0],
+  ];
+
   static List<int> ctlTempRangeGet() => _op(Op.ctlTempRangeGet);
   static List<int> ctlDefaultGet() => _op(Op.ctlDefaultGet);
 
@@ -434,9 +465,11 @@ class Composition {
 
   Set<int> get sigModels => {for (final e in elements) ...e.sigModels};
 
-  /// Parses a Config Composition Data Status message.
+  /// Parses a Config Composition Data Status message for page 0, which is
+  /// the only page Lumina asks for. Some Sengled firmware answers with a
+  /// page number other than 0 but page 0's data, so the page is not checked.
   static Composition? parse(List<int> a) {
-    if (opcodeOf(a) != Op.compositionStatus || a.length < 12 || a[1] != 0) return null;
+    if (opcodeOf(a) != Op.compositionStatus || a.length < 12) return null;
     var i = 2;
     int u16() {
       final v = u16le(a, i);

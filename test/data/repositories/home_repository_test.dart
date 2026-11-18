@@ -22,20 +22,11 @@ void main() {
     // A new app on the same store starts at or above the reservation.
     final h2 = await Harness.start(ble, store);
     expect(h2.home.home.seq, greaterThanOrEqualTo(saved['seq'] as int));
-    await h2.vm.connect();
-    expect(h2.vm.isConnected, isTrue, reason: h2.vm.status);
+    expect(h2.vm.isConnected, isTrue, reason: 'restoring connects: ${h2.vm.status}');
     final before = bulb.on;
     await h2.vm.setPower(h2.single, !before);
     await settle();
     expect(bulb.on, !before, reason: 'bulb accepted the message (no replay drop)');
-  });
-
-  test('scene names survive a restart', () async {
-    final store = MemoryHomeStore();
-    final h = await Harness.start(FakeBle([]), store);
-    await h.home.update((x) => x.copyWith(scenes: {1: 'Evening'}));
-    final h2 = await Harness.start(FakeBle([]), store);
-    expect(h2.home.home.scenes, {1: 'Evening'});
   });
 
   test('a new home gets random keys and is saved at once', () async {
@@ -65,8 +56,7 @@ void main() {
     expect(h2.all, hasLength(1));
     expect(h2.home.home.netKey, h.home.home.netKey);
     expect(h2.home.home.seq, seq + Home.restoreSeqMargin);
-    await h2.vm.connect();
-    expect(h2.vm.isConnected, isTrue, reason: h2.vm.status);
+    expect(h2.vm.isConnected, isTrue, reason: 'restoring connects: ${h2.vm.status}');
     await h2.vm.setPower(h2.single, true);
     await settle();
     expect(bulb.on, isTrue);

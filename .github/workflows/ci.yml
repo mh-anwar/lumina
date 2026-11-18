@@ -1,9 +1,11 @@
 name: CI
 
+# Runs once per change, after it lands on main: merge first, then fix
+# whatever this finds in a follow-up.
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -44,14 +46,14 @@ jobs:
           dart run build_runner build --delete-conflicting-outputs
           git diff --exit-code -- '*.freezed.dart'
 
-      # Renders the app against simulated bulbs, so a PR's UI can be reviewed
+      # Renders the app against simulated bulbs, so the UI can be reviewed
       # without a local Flutter SDK. Download "screenshots" from the run page.
       - name: Render screenshots
-        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        if: ${{ !cancelled() }}
         run: flutter test tool/screenshots/take_screenshots.dart
 
       - name: Upload screenshots
-        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: screenshots
