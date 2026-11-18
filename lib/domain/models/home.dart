@@ -113,7 +113,8 @@ abstract class Home with _$Home {
     'lights': [for (final l in lights) l.toJson()],
     'scenes': {for (final e in scenes.entries) '${e.key}': e.value},
     // Only when there are some, so other backups look exactly as before.
-    if (presets.isNotEmpty) 'presets': [for (final p in presets) p.toJson()],
+    // `this.` because the top-level `presets` (the built-in ones) would win.
+    if (this.presets.isNotEmpty) 'presets': [for (final p in this.presets) p.toJson()],
   };
 
   static const backupPrefix = 'LAMPLIGHT1:';
