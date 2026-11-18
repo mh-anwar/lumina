@@ -120,22 +120,27 @@ void main() {
 
       await _shot(tester, 'home-$theme');
 
-      // The light list, with one light opened.
-      await tester.ensureVisible(find.text('Your lights'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Desk lamp'));
+      // One light's controls.
+      await tester.tap(find.byTooltip('More for Desk lamp'));
+      await _wait(tester);
       await _shot(tester, 'lights-$theme');
+      await tester.tapAt(const Offset(20, 20)); // dismiss
+      await _wait(tester);
 
       // The Add a light sheet.
-      await tester.tap(find.text('Desk lamp')); // close it again
-      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Add a light'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add a light'));
       await _wait(tester);
       await _shot(tester, 'add-light-$theme');
-
       await tester.tapAt(const Offset(20, 20)); // dismiss
+      await _wait(tester);
+
+      // Settings.
+      await tester.tap(find.byTooltip('Settings'));
+      await _wait(tester);
+      await _shot(tester, 'settings-$theme');
+      await tester.pageBack();
       await _wait(tester);
       await tester.runAsync(deps.homeViewModel.disconnect);
     }, timeout: const Timeout(Duration(minutes: 1)));

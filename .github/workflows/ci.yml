@@ -31,3 +31,17 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+      # Renders the app against simulated bulbs, so a PR's UI can be reviewed
+      # without a local Flutter SDK. Download "screenshots" from the run page.
+      - name: Render screenshots
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        run: flutter test tool/screenshots/take_screenshots.dart
+
+      - name: Upload screenshots
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots
+          path: docs/screenshots/
+          if-no-files-found: error

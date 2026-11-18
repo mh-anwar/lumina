@@ -96,8 +96,41 @@ class HomeViewModel extends ChangeNotifier {
     if (!isConnected && !s.known) return 'Not connected';
     if (isConnected && !s.responding) return 'Not responding';
     if (!s.on) return 'Off';
-    return 'On, ${l.level}%${l.hasCtl ? ', ${l.kelvin} K' : ''}';
+    return '${l.level}%${l.hasCtl ? ' · ${warmth(l.kelvin)}' : ''}';
   }
+
+  /// A light that needs the user before it can be controlled.
+  bool needsAction(Light l) => l.wasReset || !l.configured;
+
+  /// What tapping a light that needs the user does.
+  String? actionLabel(Light l) => l.wasReset
+      ? 'Set up again'
+      : !l.configured
+      ? 'Finish setup'
+      : null;
+
+  /// The all-lights tile's status.
+  String get allStatus {
+    final n = onCount, total = ready.length;
+    if (n == 0) return 'All off';
+    final which = n == total ? 'All on' : '$n of $total on';
+    return '$which · $allLevel%';
+  }
+
+  /// A color temperature in words.
+  static String warmth(int kelvin) => switch (kelvin) {
+    < 3300 => 'Warm',
+    < 4500 => 'Neutral',
+    < 5500 => 'Cool',
+    _ => 'Daylight',
+  };
+
+  /// Connection, in a few words for the header.
+  String get connectionLabel => switch (connection) {
+    Connection.on => 'Connected',
+    Connection.connecting => 'Connecting…',
+    Connection.off => 'Not connected',
+  };
 
   void _say(String msg, {bool error = false}) {
     _status = msg;
@@ -146,7 +179,9 @@ class HomeViewModel extends ChangeNotifier {
             for (final l in lights)
               if (l.wasReset) l.name,
           ];
-          _say(reset.isEmpty ? 'Connected.' : 'Connected. ${_resetMessage(reset)}');
+          // The header already says Connected; only reset lights need a message.
+          _log.add('Connected.');
+          _say(_resetMessage(reset), error: reset.isNotEmpty);
         case NoLights():
           _say('Add a light first.');
         case NoneFound():
@@ -176,14 +211,14 @@ class HomeViewModel extends ChangeNotifier {
 
   static String _resetMessage(List<String> names) => switch (names) {
     [] => '',
-    [final one] => '$one was reset. Tap Set up again next to it.',
+    [final one] => '$one was reset. Tap it to set it up again.',
     [...final rest, final last] =>
-      '${rest.join(', ')} and $last were reset. Tap Set up again next to each.',
+      '${rest.join(', ')} and $last were reset. Tap each one to set it up again.',
   };
 
   Future<void> disconnect() => _connection.disconnect();
 
-  /// The connection pill: connect, or disconnect when connected.
+  /// Connect, or disconnect when connected.
   Future<void> toggleConnection() => isConnected ? disconnect() : connect();
 
   // ---------- home-screen widgets ----------
@@ -227,7 +262,7 @@ class HomeViewModel extends ChangeNotifier {
           _say('${light.name} is ready.');
         case LightNeedsSetup(:final light):
           _say(
-            '${light.name} was added but needs one more step. Tap Finish setup next to it.',
+            '${light.name} was added but needs one more step. Tap it to finish setup.',
             error: true,
           );
       }

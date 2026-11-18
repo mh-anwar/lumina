@@ -1,85 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:luminar/domain/models/light.dart';
 import 'package:luminar/domain/models/preset.dart';
 import 'package:luminar/ui/core/theme.dart';
-
-/// The big round button that toggles every light and glows in their color.
-class LampButton extends StatelessWidget {
-  final int onCount, total;
-  final Color glow;
-  final double level; // 0–1
-  final VoidCallback onTap;
-  const LampButton({
-    super.key,
-    required this.onCount,
-    required this.total,
-    required this.glow,
-    required this.level,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Palette.of(context);
-    final a = onCount > 0 ? 0.25 + level * 0.75 : 0.0;
-    final size = (MediaQuery.sizeOf(context).width * 0.62).clamp(160.0, 240.0);
-    final word = onCount == 0
-        ? 'Off'
-        : onCount == total
-        ? 'On'
-        : '$onCount of $total on';
-    return Column(
-      children: [
-        Semantics(
-          button: true,
-          toggled: onCount > 0,
-          label: 'All lights',
-          child: GestureDetector(
-            onTap: onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOut,
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    glow.withValues(alpha: 0.2 + a * 0.8),
-                    glow.withValues(alpha: a * 0.7),
-                    p.off,
-                  ],
-                  stops: const [0, 0.5, 0.74],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: glow.withValues(alpha: a * 0.55),
-                    blurRadius: a * 96,
-                    spreadRadius: a * 24,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                word,
-                style: display(
-                  22,
-                  color: onCount > 0 ? const Color(0xFF1C2436) : p.text.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          onCount > 0 ? 'Tap to turn every light off' : 'Tap to turn every light on',
-          style: TextStyle(color: p.muted, fontSize: 15),
-        ),
-      ],
-    );
-  }
-}
 
 /// A labeled slider with a gradient track.
 class GradientSlider extends StatelessWidget {
@@ -274,80 +200,328 @@ class LightSliders extends StatelessWidget {
   }
 }
 
-class PresetChips extends StatelessWidget {
-  final ValueChanged<Preset> onTap;
-  const PresetChips({super.key, required this.onTap});
+
+/// Asks before doing [action]. Returns true if the user confirmed.
+Future<bool> confirm(
+  BuildContext context,
+  String title,
+  String body, {
+  required String action,
+  bool danger = false,
+}) async {
+  final p = Palette.of(context);
+  final r = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(title, style: display(20)),
+      content: Text(body),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(action, style: TextStyle(color: danger ? p.danger : null)),
+        ),
+      ],
+    ),
+  );
+  return r == true;
+}
+
+/// A section title, with an optional action on the right.
+class SectionHeader extends StatelessWidget {
+  final String title;
+  final Widget? trailing;
+  const SectionHeader(this.title, {super.key, this.trailing});
 
   @override
   Widget build(BuildContext context) {
-    final p = Palette.of(context);
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final preset in presets)
-          ActionChip(
-            onPressed: () => onTap(preset),
-            backgroundColor: p.surface,
-            side: BorderSide(color: p.line),
-            shape: const StadiumBorder(),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-            avatar: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: kelvinColor(preset.kelvin)
-                    .withValues(alpha: 0.35 + preset.level / 100 * 0.65),
-                border: Border.all(color: p.line),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 24, 0, 8),
+      child: SizedBox(
+        height: 36,
+        child: Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Palette.of(context).muted,
+                  ),
+                ),
               ),
             ),
-            label: Text(preset.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-          ),
-      ],
-    );
-  }
-}
-
-/// The small glowing dot at the start of a light's row.
-class Orb extends StatelessWidget {
-  final bool lit;
-  final Color color;
-  final double level;
-  const Orb({super.key, required this.lit, required this.color, required this.level});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      width: 26,
-      height: 26,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: lit ? color : Palette.of(context).off,
-        boxShadow: lit
-            ? [BoxShadow(color: color.withValues(alpha: 0.8), blurRadius: 5 + level * 16)]
-            : null,
+            if (trailing case final t?) t,
+          ],
+        ),
       ),
     );
   }
 }
 
-/// A bordered panel.
-class Panel extends StatelessWidget {
-  final Widget child;
-  const Panel({super.key, required this.child});
+/// A light, or all lights, as a tile: tap to switch it, drag sideways to
+/// dim it, and the tune button (or a long press) for everything else.
+///
+/// The tinted part of the tile shows how bright the light is.
+class LightTile extends StatefulWidget {
+  final String name;
+  final String status;
+  final bool on;
+
+  /// 1–100 %.
+  final int level;
+  final Color color;
+  final IconData icon;
+
+  /// The light needs the user: [status] shows in red, and [action] says what
+  /// a tap does.
+  final bool attention;
+  final String? action;
+  final VoidCallback? onTap;
+  final ValueChanged<int>? onLevel;
+  final VoidCallback? onOpen;
+  const LightTile({
+    super.key,
+    required this.name,
+    required this.status,
+    required this.on,
+    required this.level,
+    required this.color,
+    this.icon = Icons.lightbulb_outline_rounded,
+    this.attention = false,
+    this.action,
+    this.onTap,
+    this.onLevel,
+    this.onOpen,
+  });
+
+  @override
+  State<LightTile> createState() => _LightTileState();
+}
+
+class _LightTileState extends State<LightTile> {
+  /// The level under the finger while dragging.
+  double? _drag;
+
+  void _dragStart(DragStartDetails _) {
+    setState(() => _drag = widget.on ? widget.level.toDouble() : 1);
+  }
+
+  void _dragUpdate(DragUpdateDetails d) {
+    final from = _drag;
+    if (from == null) return;
+    final width = context.size?.width ?? 1;
+    final next = (from + d.delta.dx / width * 100).clamp(1.0, 100.0);
+    setState(() => _drag = next);
+    if (next.round() != from.round()) widget.onLevel?.call(next.round());
+  }
+
+  void _dragEnd([DragEndDetails? _]) => setState(() => _drag = null);
+
+  void _step(int by) => widget.onLevel?.call((widget.level + by).clamp(1, 100));
+
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      decoration: BoxDecoration(
-        color: p.surface,
-        border: Border.all(color: p.line),
-        borderRadius: BorderRadius.circular(16),
+    final w = widget;
+    final drag = _drag;
+    final lit = !w.attention && (w.on || drag != null);
+    final level = (drag ?? w.level.toDouble()) / 100;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final canDim = w.onLevel != null;
+    return Semantics(
+      container: true,
+      label: w.name,
+      value: w.status,
+      toggled: w.attention ? null : w.on,
+      onIncrease: canDim ? () => _step(10) : null,
+      onDecrease: canDim ? () => _step(-10) : null,
+      child: GestureDetector(
+        onHorizontalDragStart: canDim ? _dragStart : null,
+        onHorizontalDragUpdate: canDim ? _dragUpdate : null,
+        onHorizontalDragEnd: canDim ? _dragEnd : null,
+        onHorizontalDragCancel: canDim ? _dragEnd : null,
+        child: Material(
+          color: p.surface,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: lit ? w.color.withValues(alpha: 0.6) : p.line),
+          ),
+          child: InkWell(
+            onTap: w.onTap == null
+                ? null
+                : () {
+                    unawaited(HapticFeedback.selectionClick());
+                    w.onTap?.call();
+                  },
+            onLongPress: w.onOpen,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: AnimatedFractionallySizedBox(
+                    duration: drag != null ? Duration.zero : const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    widthFactor: lit ? level : 0,
+                    heightFactor: 1,
+                    child: ColoredBox(color: w.color.withValues(alpha: dark ? 0.2 : 0.32)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: w.attention
+                                  ? p.danger.withValues(alpha: 0.14)
+                                  : lit
+                                  ? w.color
+                                  : p.off,
+                            ),
+                            child: Icon(
+                              w.attention ? Icons.priority_high_rounded : w.icon,
+                              size: 20,
+                              color: w.attention
+                                  ? p.danger
+                                  : lit
+                                  ? const Color(0xFF1C2436)
+                                  : p.muted,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (w.onOpen case final open?)
+                            IconButton(
+                              tooltip: 'More for ${w.name}',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: open,
+                              icon: Icon(Icons.tune_rounded, size: 20, color: p.muted),
+                            ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        w.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        drag != null ? '${drag.round()}%' : w.status,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: w.attention ? p.danger : p.muted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      if (w.action case final a?)
+                        Text(
+                          a,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      child: child,
+    );
+  }
+}
+
+/// A scene in the scene row: a swatch over a name. With [onDelete] it shows
+/// a remove button instead of recalling.
+class SceneCard extends StatelessWidget {
+  final String label;
+  final Widget swatch;
+  final VoidCallback onTap;
+  final VoidCallback? onDelete;
+  const SceneCard({
+    super.key,
+    required this.label,
+    required this.swatch,
+    required this.onTap,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    final delete = onDelete;
+    return SizedBox(
+      width: 112,
+      child: Material(
+        color: p.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: p.line),
+        ),
+        child: InkWell(
+          onTap: delete ?? onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    swatch,
+                    const Spacer(),
+                    if (delete != null)
+                      Icon(Icons.remove_circle_rounded, size: 20, color: p.danger),
+                  ],
+                ),
+                const Spacer(),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A preset's swatch: its color, as bright as its level.
+class PresetSwatch extends StatelessWidget {
+  final Preset preset;
+  const PresetSwatch(this.preset, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: kelvinColor(preset.kelvin).withValues(alpha: 0.3 + preset.level / 100 * 0.7),
+        border: Border.all(color: Palette.of(context).line),
+      ),
     );
   }
 }
