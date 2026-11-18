@@ -46,9 +46,12 @@ void main() {
       expect(c.elements.first.vendorModels, [0x0171fe00]);
     });
 
-    test('reads page 0 data sent under another page number, as some Sengled color firmware does', () {
-      expect(Composition.parse(status(0xee))!.sigModels, {0x0000, 0x1000, 0x1307, 0x130a});
-    });
+    test(
+      'reads page 0 data sent under another page number, as some Sengled color firmware does',
+      () {
+        expect(Composition.parse(status(0xee))!.sigModels, {0x0000, 0x1000, 0x1307, 0x130a});
+      },
+    );
 
     test('rejects an element that runs past the end', () {
       expect(Composition.parse(status(0).sublist(0, 20)), isNull);

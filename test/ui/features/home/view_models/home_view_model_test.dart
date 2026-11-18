@@ -323,9 +323,13 @@ void main() {
     await h.vm.applyPreset(presets.firstWhere((p) => p.name == 'Read'));
     expect(h.vm.allStatus, 'All on · 90%');
     expect(
-      [(0, 100), (350, 100), (225, 80), (120, 30), (90, 5)].map(
-        (c) => HomeViewModel.colorName(c.$1, c.$2),
-      ),
+      [
+        (0, 100),
+        (350, 100),
+        (225, 80),
+        (120, 30),
+        (90, 5),
+      ].map((c) => HomeViewModel.colorName(c.$1, c.$2)),
       ['Red', 'Red', 'Blue', 'Pale green', 'White'],
     );
     expect([2700, 3300, 4500, 6500].map(HomeViewModel.warmth), [
