@@ -1,5 +1,5 @@
 // Crypto and packet-building tests for the mesh stack. Each group checks
-// Luminar against an independent source of expected values:
+// Lumina against an independent source of expected values:
 //
 // - RFC 4493 AES-CMAC: the examples published in RFC 4493.
 // - Mesh Profile sample data: the sample data in the Bluetooth Mesh Profile
@@ -17,12 +17,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/crypto.dart';
-import 'package:luminar/data/mesh/messages.dart';
-import 'package:luminar/data/mesh/network.dart';
-import 'package:luminar/data/mesh/provisioning.dart';
-import 'package:luminar/data/mesh/proxy.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/crypto.dart';
+import 'package:lumina/data/mesh/messages.dart';
+import 'package:lumina/data/mesh/network.dart';
+import 'package:lumina/data/mesh/provisioning.dart';
+import 'package:lumina/data/mesh/proxy.dart';
 
 void main() {
   group('RFC 4493 AES-CMAC', () {

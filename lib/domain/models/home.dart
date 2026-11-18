@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'light.dart';
+import 'preset.dart';
 
 part 'home.freezed.dart';
 
-/// The mesh network Luminar owns: its keys, addresses and lights.
+/// The mesh network Lumina owns: its keys, addresses and lights.
 @freezed
 abstract class Home with _$Home {
   const Home._();
@@ -19,7 +20,7 @@ abstract class Home with _$Home {
     required String appKey,
     @Default(0) int iv,
 
-    /// Luminar's own unicast address.
+    /// Lumina's own unicast address.
     @Default(0x0001) int src,
 
     /// Sequence numbers below this may already have been used. Never lower it.
@@ -29,6 +30,10 @@ abstract class Home with _$Home {
 
     /// Saved scene names by scene number. The web app's backups omit them.
     @Default({}) Map<int, String> scenes,
+
+    /// Presets the user made, after the built-in ones. The web app's
+    /// backups omit them.
+    @Default([]) List<Preset> presets,
   }) = _Home;
 
   /// Lights that take commands.
@@ -88,6 +93,10 @@ abstract class Home with _$Home {
           },
           _ => const {},
         },
+        presets: switch (j['presets']) {
+          final List<Object?> l => [...l.map(Preset.fromJson).nonNulls],
+          _ => const [],
+        },
       );
     }
     throw const FormatException('Missing keys or lights');
@@ -103,6 +112,9 @@ abstract class Home with _$Home {
     'nextAddr': nextAddr,
     'lights': [for (final l in lights) l.toJson()],
     'scenes': {for (final e in scenes.entries) '${e.key}': e.value},
+    // Only when there are some, so other backups look exactly as before.
+    // `this.` because the top-level `presets` (the built-in ones) would win.
+    if (this.presets.isNotEmpty) 'presets': [for (final p in this.presets) p.toJson()],
   };
 
   static const backupPrefix = 'LAMPLIGHT1:';

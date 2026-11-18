@@ -10,7 +10,7 @@ import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import es.antonborri.home_widget.HomeWidgetProvider
 
 /**
- * Luminar's home-screen widgets. Taps run Dart in the background
+ * Lumina's home-screen widgets. Taps run Dart in the background
  * (lib/widget_entry.dart); Dart saves the status ("on", "off", "busy",
  * "unavailable") under "status" and asks for a redraw.
  */

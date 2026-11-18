@@ -1,25 +1,25 @@
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
-import 'package:luminar/data/repositories/connection_repository.dart';
-import 'package:luminar/data/repositories/home_repository.dart';
-import 'package:luminar/data/repositories/light_repository.dart';
-import 'package:luminar/data/repositories/provisioning_repository.dart';
-import 'package:luminar/data/repositories/scene_repository.dart';
-import 'package:luminar/data/repositories/widget_repository.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/data/services/mesh_proxy_service.dart';
-import 'package:luminar/data/services/provisioning_service.dart';
-import 'package:luminar/data/services/timings.dart';
-import 'package:luminar/domain/use_cases/add_light_use_case.dart';
-import 'package:luminar/domain/use_cases/connect_use_case.dart';
-import 'package:luminar/domain/use_cases/widget_action_use_case.dart';
-import 'package:luminar/ui/features/activity_log/view_models/activity_log_view_model.dart';
-import 'package:luminar/ui/features/add_light/view_models/add_light_view_model.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/data/repositories/connection_repository.dart';
+import 'package:lumina/data/repositories/home_repository.dart';
+import 'package:lumina/data/repositories/light_repository.dart';
+import 'package:lumina/data/repositories/provisioning_repository.dart';
+import 'package:lumina/data/repositories/scene_repository.dart';
+import 'package:lumina/data/repositories/widget_repository.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/data/services/mesh_proxy_service.dart';
+import 'package:lumina/data/services/provisioning_service.dart';
+import 'package:lumina/data/services/timings.dart';
+import 'package:lumina/domain/use_cases/add_light_use_case.dart';
+import 'package:lumina/domain/use_cases/connect_use_case.dart';
+import 'package:lumina/domain/use_cases/widget_action_use_case.dart';
+import 'package:lumina/ui/features/activity_log/view_models/activity_log_view_model.dart';
+import 'package:lumina/ui/features/add_light/view_models/add_light_view_model.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
 
 /// The app's object graph: services, repositories, use cases and the home
 /// screen's view model. Tests pass a simulated [ble] and an in-memory

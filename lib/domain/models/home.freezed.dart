@@ -17,10 +17,12 @@ mixin _$Home {
 
 /// Hex.
  String get netKey;/// Hex.
- String get appKey; int get iv;/// Luminar's own unicast address.
+ String get appKey; int get iv;/// Lumina's own unicast address.
  int get src;/// Sequence numbers below this may already have been used. Never lower it.
  int get seq; int get nextAddr; List<Light> get lights;/// Saved scene names by scene number. The web app's backups omit them.
- Map<int, String> get scenes;
+ Map<int, String> get scenes;/// Presets the user made, after the built-in ones. The web app's
+/// backups omit them.
+ List<Preset> get presets;
 /// Create a copy of Home
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -32,20 +34,20 @@ $HomeCopyWith<Home> get copyWith => _$HomeCopyWithImpl<Home>(this as Home, _$ide
 @override
 bool operator ==(Object other) {
   final _this = this as Home;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Home&&(identical(other.netKey, _this.netKey) || other.netKey == _this.netKey)&&(identical(other.appKey, _this.appKey) || other.appKey == _this.appKey)&&(identical(other.iv, _this.iv) || other.iv == _this.iv)&&(identical(other.src, _this.src) || other.src == _this.src)&&(identical(other.seq, _this.seq) || other.seq == _this.seq)&&(identical(other.nextAddr, _this.nextAddr) || other.nextAddr == _this.nextAddr)&&const DeepCollectionEquality().equals(other.lights, _this.lights)&&const DeepCollectionEquality().equals(other.scenes, _this.scenes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Home&&(identical(other.netKey, _this.netKey) || other.netKey == _this.netKey)&&(identical(other.appKey, _this.appKey) || other.appKey == _this.appKey)&&(identical(other.iv, _this.iv) || other.iv == _this.iv)&&(identical(other.src, _this.src) || other.src == _this.src)&&(identical(other.seq, _this.seq) || other.seq == _this.seq)&&(identical(other.nextAddr, _this.nextAddr) || other.nextAddr == _this.nextAddr)&&const DeepCollectionEquality().equals(other.lights, _this.lights)&&const DeepCollectionEquality().equals(other.scenes, _this.scenes)&&const DeepCollectionEquality().equals(other.presets, _this.presets));
 }
 
 
 @override
 int get hashCode {
   final _this = this as Home;
-  return Object.hash(runtimeType,_this.netKey,_this.appKey,_this.iv,_this.src,_this.seq,_this.nextAddr,const DeepCollectionEquality().hash(_this.lights),const DeepCollectionEquality().hash(_this.scenes));
+  return Object.hash(runtimeType,_this.netKey,_this.appKey,_this.iv,_this.src,_this.seq,_this.nextAddr,const DeepCollectionEquality().hash(_this.lights),const DeepCollectionEquality().hash(_this.scenes),const DeepCollectionEquality().hash(_this.presets));
 }
 
 @override
 String toString() {
   final _this = this as Home;
-  return 'Home(netKey: ${_this.netKey}, appKey: ${_this.appKey}, iv: ${_this.iv}, src: ${_this.src}, seq: ${_this.seq}, nextAddr: ${_this.nextAddr}, lights: ${_this.lights}, scenes: ${_this.scenes})';
+  return 'Home(netKey: ${_this.netKey}, appKey: ${_this.appKey}, iv: ${_this.iv}, src: ${_this.src}, seq: ${_this.seq}, nextAddr: ${_this.nextAddr}, lights: ${_this.lights}, scenes: ${_this.scenes}, presets: ${_this.presets})';
 }
 
 
@@ -56,7 +58,7 @@ abstract mixin class $HomeCopyWith<$Res>  {
   factory $HomeCopyWith(Home value, $Res Function(Home) _then) = _$HomeCopyWithImpl;
 @useResult
 $Res call({
- String netKey, String appKey, int iv, int src, int seq, int nextAddr, List<Light> lights, Map<int, String> scenes
+ String netKey, String appKey, int iv, int src, int seq, int nextAddr, List<Light> lights, Map<int, String> scenes, List<Preset> presets
 });
 
 
@@ -73,7 +75,7 @@ class _$HomeCopyWithImpl<$Res>
 
 /// Create a copy of Home
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? netKey = null,Object? appKey = null,Object? iv = null,Object? src = null,Object? seq = null,Object? nextAddr = null,Object? lights = null,Object? scenes = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? netKey = null,Object? appKey = null,Object? iv = null,Object? src = null,Object? seq = null,Object? nextAddr = null,Object? lights = null,Object? scenes = null,Object? presets = null,}) {
   return _then(Home(
 netKey: null == netKey ? _self.netKey : netKey // ignore: cast_nullable_to_non_nullable
 as String,appKey: null == appKey ? _self.appKey : appKey // ignore: cast_nullable_to_non_nullable
@@ -83,7 +85,8 @@ as int,seq: null == seq ? _self.seq : seq // ignore: cast_nullable_to_non_nullab
 as int,nextAddr: null == nextAddr ? _self.nextAddr : nextAddr // ignore: cast_nullable_to_non_nullable
 as int,lights: null == lights ? _self.lights : lights // ignore: cast_nullable_to_non_nullable
 as List<Light>,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
-as Map<int, String>,
+as Map<int, String>,presets: null == presets ? _self.presets : presets // ignore: cast_nullable_to_non_nullable
+as List<Preset>,
   ));
 }
 
@@ -168,10 +171,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String netKey,  String appKey,  int iv,  int src,  int seq,  int nextAddr,  List<Light> lights,  Map<int, String> scenes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String netKey,  String appKey,  int iv,  int src,  int seq,  int nextAddr,  List<Light> lights,  Map<int, String> scenes,  List<Preset> presets)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Home() when $default != null:
-return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nextAddr,_that.lights,_that.scenes);case _:
+return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nextAddr,_that.lights,_that.scenes,_that.presets);case _:
   return orElse();
 
 }
@@ -189,10 +192,10 @@ return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nex
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String netKey,  String appKey,  int iv,  int src,  int seq,  int nextAddr,  List<Light> lights,  Map<int, String> scenes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String netKey,  String appKey,  int iv,  int src,  int seq,  int nextAddr,  List<Light> lights,  Map<int, String> scenes,  List<Preset> presets)  $default,) {final _that = this;
 switch (_that) {
 case _Home():
-return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nextAddr,_that.lights,_that.scenes);case _:
+return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nextAddr,_that.lights,_that.scenes,_that.presets);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -209,10 +212,10 @@ return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nex
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String netKey,  String appKey,  int iv,  int src,  int seq,  int nextAddr,  List<Light> lights,  Map<int, String> scenes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String netKey,  String appKey,  int iv,  int src,  int seq,  int nextAddr,  List<Light> lights,  Map<int, String> scenes,  List<Preset> presets)?  $default,) {final _that = this;
 switch (_that) {
 case _Home() when $default != null:
-return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nextAddr,_that.lights,_that.scenes);case _:
+return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nextAddr,_that.lights,_that.scenes,_that.presets);case _:
   return null;
 
 }
@@ -224,7 +227,7 @@ return $default(_that.netKey,_that.appKey,_that.iv,_that.src,_that.seq,_that.nex
 
 
 class _Home extends Home {
-  const _Home({required this.netKey, required this.appKey, this.iv = 0, this.src = 0x0001, this.seq = 1, this.nextAddr = 0x0010,  List<Light> lights = const [],  Map<int, String> scenes = const {}}): _lights = lights,_scenes = scenes,super._();
+  const _Home({required this.netKey, required this.appKey, this.iv = 0, this.src = 0x0001, this.seq = 1, this.nextAddr = 0x0010,  List<Light> lights = const [],  Map<int, String> scenes = const {},  List<Preset> presets = const []}): _lights = lights,_scenes = scenes,_presets = presets,super._();
   
 
 /// Hex.
@@ -232,7 +235,7 @@ class _Home extends Home {
 /// Hex.
 @override final  String appKey;
 @override@JsonKey() final  int iv;
-/// Luminar's own unicast address.
+/// Lumina's own unicast address.
 @override@JsonKey() final  int src;
 /// Sequence numbers below this may already have been used. Never lower it.
 @override@JsonKey() final  int seq;
@@ -253,6 +256,17 @@ class _Home extends Home {
   return EqualUnmodifiableMapView(_scenes);
 }
 
+/// Presets the user made, after the built-in ones. The web app's
+/// backups omit them.
+ final  List<Preset> _presets;
+/// Presets the user made, after the built-in ones. The web app's
+/// backups omit them.
+@override@JsonKey() List<Preset> get presets {
+  if (_presets is EqualUnmodifiableListView) return _presets;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_presets);
+}
+
 
 /// Create a copy of Home
 /// with the given fields replaced by the non-null parameter values.
@@ -264,18 +278,18 @@ _$HomeCopyWith<_Home> get copyWith => __$HomeCopyWithImpl<_Home>(this, _$identit
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Home&&(identical(other.netKey, netKey) || other.netKey == netKey)&&(identical(other.appKey, appKey) || other.appKey == appKey)&&(identical(other.iv, iv) || other.iv == iv)&&(identical(other.src, src) || other.src == src)&&(identical(other.seq, seq) || other.seq == seq)&&(identical(other.nextAddr, nextAddr) || other.nextAddr == nextAddr)&&const DeepCollectionEquality().equals(other.lights, _lights)&&const DeepCollectionEquality().equals(other.scenes, _scenes));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Home&&(identical(other.netKey, netKey) || other.netKey == netKey)&&(identical(other.appKey, appKey) || other.appKey == appKey)&&(identical(other.iv, iv) || other.iv == iv)&&(identical(other.src, src) || other.src == src)&&(identical(other.seq, seq) || other.seq == seq)&&(identical(other.nextAddr, nextAddr) || other.nextAddr == nextAddr)&&const DeepCollectionEquality().equals(other.lights, _lights)&&const DeepCollectionEquality().equals(other.scenes, _scenes)&&const DeepCollectionEquality().equals(other.presets, _presets));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,netKey,appKey,iv,src,seq,nextAddr,const DeepCollectionEquality().hash(_lights),const DeepCollectionEquality().hash(_scenes));
+    return Object.hash(runtimeType,netKey,appKey,iv,src,seq,nextAddr,const DeepCollectionEquality().hash(_lights),const DeepCollectionEquality().hash(_scenes),const DeepCollectionEquality().hash(_presets));
 }
 
 @override
 String toString() {
-    return 'Home(netKey: $netKey, appKey: $appKey, iv: $iv, src: $src, seq: $seq, nextAddr: $nextAddr, lights: $lights, scenes: $scenes)';
+    return 'Home(netKey: $netKey, appKey: $appKey, iv: $iv, src: $src, seq: $seq, nextAddr: $nextAddr, lights: $lights, scenes: $scenes, presets: $presets)';
 }
 
 
@@ -286,7 +300,7 @@ abstract mixin class _$HomeCopyWith<$Res> implements $HomeCopyWith<$Res> {
   factory _$HomeCopyWith(_Home value, $Res Function(_Home) _then) = __$HomeCopyWithImpl;
 @override @useResult
 $Res call({
- String netKey, String appKey, int iv, int src, int seq, int nextAddr, List<Light> lights, Map<int, String> scenes
+ String netKey, String appKey, int iv, int src, int seq, int nextAddr, List<Light> lights, Map<int, String> scenes, List<Preset> presets
 });
 
 
@@ -303,7 +317,7 @@ class __$HomeCopyWithImpl<$Res>
 
 /// Create a copy of Home
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? netKey = null,Object? appKey = null,Object? iv = null,Object? src = null,Object? seq = null,Object? nextAddr = null,Object? lights = null,Object? scenes = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? netKey = null,Object? appKey = null,Object? iv = null,Object? src = null,Object? seq = null,Object? nextAddr = null,Object? lights = null,Object? scenes = null,Object? presets = null,}) {
   return _then(_Home(
 netKey: null == netKey ? _self.netKey : netKey // ignore: cast_nullable_to_non_nullable
 as String,appKey: null == appKey ? _self.appKey : appKey // ignore: cast_nullable_to_non_nullable
@@ -313,7 +327,8 @@ as int,seq: null == seq ? _self.seq : seq // ignore: cast_nullable_to_non_nullab
 as int,nextAddr: null == nextAddr ? _self.nextAddr : nextAddr // ignore: cast_nullable_to_non_nullable
 as int,lights: null == lights ? _self._lights : lights // ignore: cast_nullable_to_non_nullable
 as List<Light>,scenes: null == scenes ? _self._scenes : scenes // ignore: cast_nullable_to_non_nullable
-as Map<int, String>,
+as Map<int, String>,presets: null == presets ? _self._presets : presets // ignore: cast_nullable_to_non_nullable
+as List<Preset>,
   ));
 }
 

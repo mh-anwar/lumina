@@ -1,11 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/domain/models/connection.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/data/repositories/widget_repository.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/domain/models/widget_action.dart';
+import 'package:lumina/domain/models/connection.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/data/repositories/widget_repository.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/domain/models/widget_action.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
 
 import '../../../../support/harness.dart';
 import '../../../../support/mock_bulb.dart';
@@ -37,14 +38,14 @@ void main() {
     // reports a nonzero lightness.
     expect(h.vm.statusLine(l), 'Off');
     await h.vm.setPower(l, true);
-    expect(h.vm.statusLine(l), 'On, 46%, 3000 K');
+    expect(h.vm.statusLine(l), '46% · Warm');
     await h.vm.setPower(l, false);
     expect(h.vm.statusLine(l), 'Off');
     expect(h.vm.onCount, 0);
     await h.vm.setPower(l, true);
     expect(h.vm.onCount, 1);
     await h.vm.applyPreset(presets.firstWhere((p) => p.name == 'Read'));
-    expect(h.vm.statusLine(h.vm.lights.single), 'On, 90%, 4000 K');
+    expect(h.vm.statusLine(h.vm.lights.single), '90% · Neutral');
     expect([h.vm.allLevel, h.vm.allKelvin], [90, 4000]);
     await settle();
     expect(bulb.kelvin, 4000);
@@ -92,7 +93,7 @@ void main() {
     final bulb = MockBulb('AA:01', 'BLE Bulb_7B2E')..answersAppKeyAdd = false;
     final h = await Harness.start(FakeBle([bulb]));
     expect(await h.vm.addLight(nearby(bulb)), isTrue);
-    expect(h.vm.status, contains('Finish setup'));
+    expect(h.vm.status, contains('finish setup'));
     expect(h.vm.statusIsError, isTrue);
     final l = h.vm.lights.single;
     expect(h.vm.statusLine(l), 'Needs one more setup step');
@@ -151,7 +152,7 @@ void main() {
       bulb.factoryReset();
 
       await h.vm.connect();
-      expect(h.vm.status, 'BLE Bulb_A9CB was reset. Tap Set up again next to it.');
+      expect(h.vm.status, 'BLE Bulb_A9CB was reset. Tap it to set it up again.');
       expect(h.vm.statusIsError, isTrue);
       final l = h.vm.lights.single;
       expect(h.vm.statusLine(l), 'Was reset');
@@ -171,7 +172,7 @@ void main() {
       b.factoryReset();
       await h.vm.connect();
       expect(h.vm.isConnected, isTrue);
-      expect(h.vm.status, 'Connected. BLE Bulb_A9CC was reset. Tap Set up again next to it.');
+      expect(h.vm.status, 'BLE Bulb_A9CC was reset. Tap it to set it up again.');
     });
 
     test('lists several reset lights by name', () async {
@@ -187,7 +188,7 @@ void main() {
         b.factoryReset();
       }
       await h.vm.connect();
-      expect(h.vm.status, 'Bulb A, Bulb B and Bulb C were reset. Tap Set up again next to each.');
+      expect(h.vm.status, 'Bulb A, Bulb B and Bulb C were reset. Tap each one to set it up again.');
     });
   });
 
@@ -277,6 +278,59 @@ void main() {
     await h2.vm.start();
     expect(h2.vm.loaded, isTrue);
     expect(h2.vm.isConnected, isTrue, reason: h2.vm.status);
-    expect(h2.vm.status, 'Connected.');
+    expect(h2.vm.status, isEmpty, reason: 'the header shows the connection');
+    expect(h2.vm.connectionLabel, 'Connected');
+  });
+
+  test('describes all lights and color temperature in words', () async {
+    final a = MockBulb('AA:01', 'BLE Bulb_A9CB'), b = MockBulb('AA:02', 'BLE Bulb_A9CC');
+    final h = await Harness.start(FakeBle([a, b]));
+    await h.vm.addLight(nearby(a));
+    await h.vm.addLight(nearby(b));
+    expect(h.vm.allStatus, 'All off');
+    await h.vm.setPower(h.vm.lights.first, true);
+    expect(h.vm.allStatus, '1 of 2 on · ${h.vm.lights.first.level}%');
+    await h.vm.applyPreset(presets.firstWhere((p) => p.name == 'Read'));
+    expect(h.vm.allStatus, 'All on · 90%');
+    expect(h.vm.actionLabel(h.vm.lights.first), isNull);
+    expect(h.vm.needsAction(h.vm.lights.first), isFalse);
+    expect([2700, 3300, 4500, 6500].map(HomeViewModel.warmth), [
+      'Warm',
+      'Neutral',
+      'Cool',
+      'Daylight',
+    ]);
+  });
+
+  test('saves, uses and deletes the user\'s own presets', () async {
+    final bulb = MockBulb('AA:01', 'BLE Bulb_A9CB');
+    final h = await Harness.start(FakeBle([bulb]));
+    await h.vm.addLight(nearby(bulb));
+
+    expect(await h.vm.savePreset('  ', level: 40, kelvin: 2900), isFalse);
+    expect(h.vm.status, 'Give the scene a name.');
+    expect(await h.vm.savePreset('relax', level: 40, kelvin: 2900), isFalse);
+    expect(h.vm.statusIsError, isTrue);
+
+    expect(await h.vm.savePreset(' Dinner ', level: 40, kelvin: 2900), isTrue);
+    expect(h.vm.status, 'Saved Dinner. Tap it to use it.');
+    expect(h.vm.customPresets, [const Preset('Dinner', 40, 2900)]);
+
+    // Saving the same name again replaces it.
+    await h.vm.savePreset('Dinner', level: 60, kelvin: 3000);
+    expect(h.vm.customPresets, [const Preset('Dinner', 60, 3000)]);
+
+    await h.vm.applyPreset(h.vm.customPresets.single);
+    await settle();
+    expect([bulb.on, bulb.kelvin], [true, 3000]);
+
+    // They survive a restart.
+    await h.home.save();
+    final h2 = Harness(FakeBle([bulb]), h.store);
+    await h2.home.load();
+    expect(h2.vm.customPresets, [const Preset('Dinner', 60, 3000)]);
+
+    await h.vm.deletePreset(h.vm.customPresets.single);
+    expect(h.vm.customPresets, isEmpty);
   });
 }

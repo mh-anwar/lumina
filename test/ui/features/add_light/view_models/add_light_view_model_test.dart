@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/ui/features/add_light/view_models/add_light_view_model.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/ui/features/add_light/view_models/add_light_view_model.dart';
 
 import '../../../../support/harness.dart';
 import '../../../../support/mock_bulb.dart';

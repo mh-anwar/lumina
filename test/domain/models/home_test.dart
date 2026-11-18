@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/domain/models/home.dart';
-import 'package:luminar/domain/models/light.dart';
+import 'package:lumina/domain/models/home.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/preset.dart';
 
 void main() {
   const netKey = '00112233445566778899aabbccddeeff';
@@ -51,6 +52,32 @@ void main() {
     final back = Home.fromJson(jsonDecode(jsonEncode(h.toJson())) as Map<String, Object?>);
     expect(back.scenes, {1: 'Evening', 3: 'Movie'});
     expect(back, h);
+  });
+
+  test('saves the user\'s presets, and leaves them out when there are none', () {
+    const h = Home(
+      netKey: netKey,
+      appKey: appKey,
+      presets: [Preset('Dinner', 40, 2900), Preset('Work', 95, 5000)],
+    );
+    final back = Home.fromBackupCode(h.toBackupCode());
+    expect(back.presets, h.presets);
+    expect(const Home(netKey: netKey, appKey: appKey).toJson(), isNot(contains('presets')));
+  });
+
+  test('skips presets it cannot read and clamps the rest', () {
+    final h = Home.fromJson({
+      'netKey': netKey,
+      'appKey': appKey,
+      'lights': <Object>[],
+      'presets': [
+        {'name': 'Bright', 'level': 400, 'kelvin': 9000},
+        {'name': '  ', 'level': 50, 'kelvin': 3000},
+        {'level': 50},
+        'nope',
+      ],
+    });
+    expect(h.presets, [const Preset('Bright', 100, maxKelvin)]);
   });
 
   test('updateLight replaces one light', () {

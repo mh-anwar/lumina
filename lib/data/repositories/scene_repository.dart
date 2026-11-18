@@ -1,8 +1,8 @@
-import 'package:luminar/data/mesh/messages.dart';
-import 'package:luminar/data/repositories/home_repository.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/mesh_proxy_service.dart';
-import 'package:luminar/domain/models/light.dart';
+import 'package:lumina/data/mesh/messages.dart';
+import 'package:lumina/data/repositories/home_repository.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/mesh_proxy_service.dart';
+import 'package:lumina/domain/models/light.dart';
 
 /// Scenes stored on the bulbs (Scene Setup Server) and their names.
 class SceneRepository {

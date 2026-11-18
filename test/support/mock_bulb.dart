@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/crypto.dart';
-import 'package:luminar/data/mesh/messages.dart';
-import 'package:luminar/data/mesh/network.dart';
-import 'package:luminar/data/mesh/provisioning.dart';
-import 'package:luminar/data/mesh/proxy.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/crypto.dart';
+import 'package:lumina/data/mesh/messages.dart';
+import 'package:lumina/data/mesh/network.dart';
+import 'package:lumina/data/mesh/provisioning.dart';
+import 'package:lumina/data/mesh/proxy.dart';
 
 /// A simulated Sengled bulb: the device side of PB-GATT and the mesh proxy.
 /// Ported from reference/mock-bulb.js.

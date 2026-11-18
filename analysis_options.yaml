@@ -1,4 +1,4 @@
-# Static analysis for Luminar: Flutter's recommended lints, strict type
+# Static analysis for Lumina: Flutter's recommended lints, strict type
 # checks, and a few extra rules.
 include: package:flutter_lints/flutter.yaml
 

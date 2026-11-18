@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/domain/models/nearby_bulb.dart';
-import 'package:luminar/ui/core/theme.dart';
-import 'package:luminar/ui/features/add_light/view_models/add_light_view_model.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/domain/models/nearby_bulb.dart';
+import 'package:lumina/ui/core/theme.dart';
+import 'package:lumina/ui/features/add_light/view_models/add_light_view_model.dart';
 
 /// Lists bulbs ready to add; [onPicked] runs once the sheet has closed.
 Future<void> showAddLightSheet(

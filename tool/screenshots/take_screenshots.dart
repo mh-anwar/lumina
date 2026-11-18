@@ -13,11 +13,11 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/main.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/main.dart';
 import 'package:provider/provider.dart';
 
 import '../../test/support/harness.dart';
@@ -84,7 +84,7 @@ void main() {
           store: MemoryHomeStore(),
           timings: fast,
           widgetService: MemoryHomeWidgetService(),
-          widgetPort: 'luminar.screenshots.$theme',
+          widgetPort: 'lumina.screenshots.$theme',
         );
         d.providers; // creates every object in the real zone
         final vm = d.homeViewModel;
@@ -113,29 +113,34 @@ void main() {
       await tester.pumpWidget(
         RepaintBoundary(
           key: const ValueKey('app'),
-          child: MultiProvider(providers: deps.providers, child: const LuminarApp()),
+          child: MultiProvider(providers: deps.providers, child: const LuminaApp()),
         ),
       );
       await _wait(tester);
 
       await _shot(tester, 'home-$theme');
 
-      // The light list, with one light opened.
-      await tester.ensureVisible(find.text('Your lights'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Desk lamp'));
+      // One light's controls.
+      await tester.tap(find.byTooltip('More for Desk lamp'));
+      await _wait(tester);
       await _shot(tester, 'lights-$theme');
+      await tester.tapAt(const Offset(20, 20)); // dismiss
+      await _wait(tester);
 
       // The Add a light sheet.
-      await tester.tap(find.text('Desk lamp')); // close it again
-      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Add a light'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add a light'));
       await _wait(tester);
       await _shot(tester, 'add-light-$theme');
-
       await tester.tapAt(const Offset(20, 20)); // dismiss
+      await _wait(tester);
+
+      // Settings.
+      await tester.tap(find.byTooltip('Settings'));
+      await _wait(tester);
+      await _shot(tester, 'settings-$theme');
+      await tester.pageBack();
       await _wait(tester);
       await tester.runAsync(deps.homeViewModel.disconnect);
     }, timeout: const Timeout(Duration(minutes: 1)));

@@ -2,7 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:luminar/domain/models/log_entry.dart';
+import 'package:lumina/domain/models/log_entry.dart';
 
 /// Every PDU and event, for debugging with real bulbs. Also printed in
 /// debug builds.
@@ -15,7 +15,7 @@ class ActivityLog extends ChangeNotifier {
   void add(String text) {
     _entries.add(LogEntry(text));
     if (_entries.length > _max) _entries.removeRange(0, _entries.length - _keep);
-    if (kDebugMode) debugPrint('[luminar] $text');
+    if (kDebugMode) debugPrint('[lumina] $text');
     notifyListeners();
   }
 

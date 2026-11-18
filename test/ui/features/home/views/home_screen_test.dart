@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/main.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/main.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../support/harness.dart';
@@ -44,7 +44,7 @@ Future<HomeViewModel> pumpApp(WidgetTester tester, FakeBle ble, Brightness b) as
       store: MemoryHomeStore(),
       timings: fast,
       widgetService: MemoryHomeWidgetService(),
-      widgetPort: 'luminar.test.screen.${b.name}',
+      widgetPort: 'lumina.test.screen.${b.name}',
     );
     d.providers; // creates every object
     return d;
@@ -52,7 +52,7 @@ Future<HomeViewModel> pumpApp(WidgetTester tester, FakeBle ble, Brightness b) as
   await tester.pumpWidget(
     RepaintBoundary(
       key: const ValueKey('app'),
-      child: MultiProvider(providers: deps.providers, child: const LuminarApp()),
+      child: MultiProvider(providers: deps.providers, child: const LuminaApp()),
     ),
   );
   // Let the home load in the real zone.
@@ -71,8 +71,8 @@ void main() {
       final bulbB = MockBulb('AA:02', 'BLE Bulb_A9CB', rssi: -80);
       final vm = await pumpApp(tester, FakeBle([bulbA, bulbB]), b);
 
-      expect(find.text('Luminar'), findsOneWidget);
-      expect(find.textContaining('No lights yet'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('No lights yet'), findsOneWidget);
       await shot(tester, '1-empty-${b.name}');
 
       // The add sheet lists both unprovisioned bulbs.
@@ -92,28 +92,56 @@ void main() {
         await vm.saveScene('Evening');
       });
       await tester.pumpAndSettle();
-      expect(find.text('On'), findsOneWidget); // the lamp
       expect(find.text('Evening'), findsOneWidget);
       expect(find.text('Connected'), findsOneWidget);
+      expect(find.text('All lights'), findsNothing, reason: 'one light needs no all-lights tile');
 
-      // Expand the row to show per-light controls.
+      // Tapping the tile switches the light.
       await tester.tap(find.text('BLE Bulb_7B2E'));
-      await tester.pumpAndSettle();
-      expect(find.text('Rename'), findsOneWidget);
-      expect(find.text('Use as default'), findsOneWidget);
-      await shot(tester, '3-controls-${b.name}');
-
-      // The lamp turns everything off.
-      await tester.tap(find.text('On'));
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
       await tester.pumpAndSettle();
       expect(bulbA.on, isFalse);
-      expect(find.text('Off'), findsWidgets);
+      expect(find.text('Off'), findsOneWidget);
 
-      // The activity log opens with its own view model.
+      // Dragging sideways across the tile turns it on and dims it.
+      await tester.drag(find.text('BLE Bulb_7B2E'), const Offset(60, 0));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pumpAndSettle();
+      expect(vm.stateOf(vm.lights.single).on, isTrue);
+
+      // New makes a scene from a brightness and white for every light.
+      await tester.tap(find.text('New'));
+      await tester.pumpAndSettle();
+      expect(find.text('New scene'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'Cozy');
+      await tester.tap(find.text('Warm'));
+      await tester.tap(find.text('Save scene'));
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pumpAndSettle();
+      expect(find.text('New scene'), findsNothing);
+      expect(find.text('Cozy'), findsOneWidget);
+      expect(vm.customPresets.single.kelvin, 2700);
+
+      // The tune button opens the light's own controls.
+      await tester.tap(find.byTooltip('More for BLE Bulb_7B2E'));
+      await tester.pumpAndSettle();
+      expect(find.text('Brightness'), findsOneWidget);
+      expect(find.text('Remove light'), findsOneWidget);
+      expect(find.text('When the switch turns it on'), findsOneWidget);
+      await shot(tester, '3-controls-${b.name}');
+      await tester.tapAt(const Offset(20, 20));
+      await tester.pumpAndSettle();
+
+      // Settings holds backups and the activity log.
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+      expect(find.text('Back up lights'), findsOneWidget);
+      await shot(tester, '4-settings-${b.name}');
       await tester.tap(find.text('Activity log'));
       await tester.pumpAndSettle();
       expect(find.textContaining('BLE Bulb_7B2E is ready.'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
       await tester.pageBack();
       await tester.pumpAndSettle();
       await tester.runAsync(vm.disconnect);

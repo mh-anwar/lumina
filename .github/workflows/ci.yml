@@ -23,11 +23,37 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Formats in place and prints the diff, so a failure shows the fix.
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed lib test tool
+        run: dart format lib test tool && git diff --exit-code
 
       - name: Analyze
+        if: ${{ !cancelled() }}
         run: flutter analyze
 
       - name: Run tests
+        if: ${{ !cancelled() }}
         run: flutter test
+
+      # Regenerates the freezed code and prints any difference to commit.
+      - name: Check generated code
+        if: ${{ !cancelled() }}
+        run: |
+          git stash --include-untracked --quiet || true
+          git checkout -- .
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code -- '*.freezed.dart'
+
+      # Renders the app against simulated bulbs, so a PR's UI can be reviewed
+      # without a local Flutter SDK. Download "screenshots" from the run page.
+      - name: Render screenshots
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        run: flutter test tool/screenshots/take_screenshots.dart
+
+      - name: Upload screenshots
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots
+          path: docs/screenshots/
+          if-no-files-found: error

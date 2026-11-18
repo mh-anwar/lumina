@@ -1,6 +1,6 @@
-import 'package:luminar/data/repositories/connection_repository.dart';
-import 'package:luminar/data/repositories/light_repository.dart';
-import 'package:luminar/domain/models/widget_action.dart';
+import 'package:lumina/data/repositories/connection_repository.dart';
+import 'package:lumina/data/repositories/light_repository.dart';
+import 'package:lumina/domain/models/widget_action.dart';
 
 /// Runs a widget tap while the app is not running: connect, send one group
 /// command, report what the widget should show.

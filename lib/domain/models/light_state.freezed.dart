@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LightState {
 
- bool get on;/// Whether the light has reported its state since Luminar started.
+ bool get on;/// Whether the light has reported its state since Lumina started.
  bool get known;/// False when the light did not answer the last state query.
  bool get responding;
 /// Create a copy of LightState
@@ -220,7 +220,7 @@ class _LightState implements LightState {
   
 
 @override@JsonKey() final  bool on;
-/// Whether the light has reported its state since Luminar started.
+/// Whether the light has reported its state since Lumina started.
 @override@JsonKey() final  bool known;
 /// False when the light did not answer the last state query.
 @override@JsonKey() final  bool responding;

@@ -1,4 +1,4 @@
-// Renders Luminar's icon and splash images into assets/brand/.
+// Renders Lumina's icon and splash images into assets/brand/.
 //
 //   flutter test tool/brand/render_brand_assets.dart
 //   dart run flutter_launcher_icons

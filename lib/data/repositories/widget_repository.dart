@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
 
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/domain/models/widget_action.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/domain/models/widget_action.dart';
 
 /// A widget tap handed to the running app, which answers with the status
 /// the widget should show.
@@ -22,7 +22,7 @@ class WidgetRepository {
 
   /// Where the running app listens for widget taps. Tests use their own.
   final String portName;
-  static const defaultPortName = 'luminar.widget';
+  static const defaultPortName = 'lumina.widget';
 
   WidgetStatus? _shown;
 

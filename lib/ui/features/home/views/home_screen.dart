@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
 
-import 'package:provider/provider.dart';
+import 'package:lumina/domain/models/connection.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/ui/features/add_light/views/add_light_sheet.dart';
+import 'package:lumina/ui/features/home/view_models/home_view_model.dart';
+import 'package:lumina/ui/features/home/views/light_sheet.dart';
+import 'package:lumina/ui/features/home/views/new_scene_sheet.dart';
+import 'package:lumina/ui/features/home/views/settings_screen.dart';
+import 'package:lumina/ui/core/theme.dart';
+import 'package:lumina/ui/core/widgets.dart';
 
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/domain/models/connection.dart';
-import 'package:luminar/ui/features/add_light/views/add_light_sheet.dart';
-import 'package:luminar/ui/features/home/view_models/home_view_model.dart';
-import 'package:luminar/ui/features/home/views/light_row.dart';
-import 'package:luminar/ui/features/activity_log/views/log_screen.dart';
-import 'package:luminar/ui/core/theme.dart';
-import 'package:luminar/ui/core/widgets.dart';
-
+/// The home screen: all lights, scenes, and a tile for each light.
 class HomeScreen extends StatefulWidget {
   final HomeViewModel viewModel;
   const HomeScreen({super.key, required this.viewModel});
@@ -23,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   HomeViewModel get c => widget.viewModel;
-  int? _open;
+  bool _editingScenes = false;
 
   @override
   void initState() {
@@ -57,10 +56,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           body: SafeArea(
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
-                  children: _children(context),
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+                      sliver: SliverMainAxisGroup(slivers: _slivers(context)),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -70,343 +73,386 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  List<Widget> _children(BuildContext context) {
-    final p = Palette.of(context);
+  List<Widget> _slivers(BuildContext context) {
     final ready = c.ready;
-    final level = c.allLevel, kelvin = c.allKelvin;
     return [
-      Row(
-        children: [
-          Expanded(child: Text('Luminar', style: display(26))),
-          _ConnPill(viewModel: c),
-        ],
-      ),
-      Semantics(
-        liveRegion: true,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(
-            c.status,
-            style: TextStyle(color: c.statusIsError ? p.danger : p.muted, fontSize: 14.5),
-          ),
-        ),
-      ),
-      if (ready.isNotEmpty) ...[
-        const SizedBox(height: 28),
-        LampButton(
-          onCount: c.onCount,
-          total: ready.length,
-          glow: kelvinColor(kelvin),
-          level: level / 100,
-          onTap: c.toggleAll,
-        ),
-        const SizedBox(height: 20),
-        LightSliders(
-          level: level,
-          kelvin: kelvin,
-          showWarmth: ready.any((l) => l.hasCtl),
-          onLevel: (v) => c.setAll(level: v),
-          onKelvin: (v) => c.setAll(kelvin: v),
-        ),
-        const SizedBox(height: 12),
-        PresetChips(onTap: c.applyPreset),
-        if (c.showScenes) _Scenes(viewModel: c),
-      ],
-      const SizedBox(height: 32),
-      Text('Your lights', style: display(19)),
-      const SizedBox(height: 8),
-      Divider(height: 1, color: p.line),
+      SliverToBoxAdapter(child: _Header(viewModel: c)),
+      SliverToBoxAdapter(child: _StatusBanner(viewModel: c)),
       if (c.lights.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Text(
-            'No lights yet. Tap Add a light to set up your first bulb.',
-            style: TextStyle(color: p.muted),
-          ),
-        ),
-      for (final l in c.lights)
-        LightRow(
-          key: ValueKey(l.addr),
-          viewModel: c,
-          light: l,
-          expanded: _open == l.addr,
-          onToggleExpand: () => setState(() => _open = _open == l.addr ? null : l.addr),
-        ),
-      const SizedBox(height: 18),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: FilledButton(
-          onPressed: c.busy ? null : () => showAddLightSheet(context, onPicked: c.addLight),
-          child: const Text('Add a light'),
-        ),
-      ),
-      const SizedBox(height: 36),
-      Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: [
-          _FootButton('Back up lights', () => _backup(context)),
-          _FootButton('Restore from backup', () => _restore(context)),
-          _FootButton(
-            'Activity log',
-            () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) =>
-                    LogScreen(viewModel: context.read<Dependencies>().activityLogViewModel()),
+        SliverToBoxAdapter(child: _EmptyState(viewModel: c))
+      else ...[
+        if (ready.length > 1)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: SizedBox(
+                height: 116,
+                child: LightTile(
+                  name: 'All lights',
+                  status: c.allStatus,
+                  on: c.onCount > 0,
+                  level: c.allLevel,
+                  color: kelvinColor(c.allKelvin),
+                  icon: Icons.home_outlined,
+                  onTap: c.toggleAll,
+                  onLevel: (v) => c.setAll(level: v),
+                  onOpen: () => showLightSheet(context, c),
+                ),
               ),
             ),
           ),
-          _FootButton('Start over', () => _startOver(context)),
+        if (ready.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: SectionHeader(
+              'Scenes',
+              trailing: c.scenes.isEmpty && c.customPresets.isEmpty
+                  ? null
+                  : TextButton(
+                      onPressed: () => setState(() => _editingScenes = !_editingScenes),
+                      child: Text(_editingScenes ? 'Done' : 'Edit'),
+                    ),
+            ),
+          ),
+          SliverToBoxAdapter(child: _sceneRow(context)),
         ],
-      ),
+        const SliverToBoxAdapter(child: SectionHeader('Lights')),
+        SliverGrid(
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 220,
+            mainAxisExtent: 140,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+          ),
+          delegate: SliverChildListDelegate([
+            for (final l in c.lights) _lightTile(context, l),
+            _AddTile(onTap: c.busy ? null : () => _addLight(context)),
+          ]),
+        ),
+      ],
     ];
   }
 
-  Future<void> _backup(BuildContext context) async {
-    final code = c.backupCode();
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Backup code', style: display(20)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Keep this code somewhere private, like a password manager. It lets you restore your lights on this or another phone, and it also works in the Lamplight web app.',
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Palette.of(ctx).bg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: SelectableText(
-                  code,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-                ),
-              ),
-            ],
-          ),
+  Widget _lightTile(BuildContext context, Light l) {
+    final s = c.stateOf(l);
+    final attention = c.needsAction(l);
+    VoidCallback? tap;
+    if (l.wasReset) {
+      tap = c.busy ? null : () => c.setUpAgain(l);
+    } else if (!l.configured) {
+      tap = c.busy ? null : () => c.finishSetup(l);
+    } else {
+      tap = () => c.setPower(l, !s.on);
+    }
+    return LightTile(
+      key: ValueKey(l.addr),
+      name: l.name,
+      status: c.statusLine(l),
+      on: l.configured && s.on,
+      level: l.level,
+      color: kelvinColor(l.kelvin),
+      attention: attention,
+      action: c.actionLabel(l),
+      onTap: tap,
+      onLevel: l.usable && (l.hasLightness || l.hasCtl) ? (v) => c.setLight(l, level: v) : null,
+      onOpen: () => showLightSheet(context, c, addr: l.addr),
+    );
+  }
+
+  Widget _sceneRow(BuildContext context) {
+    final p = Palette.of(context);
+    final editing = _editingScenes;
+    // New first, then the user's own, so they show without scrolling.
+    final cards = <Widget>[
+      if (!editing)
+        SceneCard(
+          label: 'New',
+          swatch: Icon(Icons.add_rounded, size: 24, color: p.text),
+          onTap: () => showNewSceneSheet(context, c),
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: code));
-              if (ctx.mounted) Navigator.pop(ctx);
-              c.backupCopied();
-            },
-            child: const Text('Copy'),
+      for (final e in c.scenes.entries)
+        SceneCard(
+          label: e.value,
+          swatch: Icon(Icons.bookmark_outline_rounded, size: 24, color: p.muted),
+          onTap: () => c.recallScene(e.key),
+          onDelete: editing ? () => _deleteScene(context, e.key, e.value) : null,
+        ),
+      for (final preset in c.customPresets)
+        SceneCard(
+          label: preset.name,
+          swatch: PresetSwatch(preset),
+          onTap: () => c.applyPreset(preset),
+          onDelete: editing ? () => _deletePreset(context, preset) : null,
+        ),
+      if (!editing)
+        for (final preset in presets)
+          SceneCard(
+            label: preset.name,
+            swatch: PresetSwatch(preset),
+            onTap: () => c.applyPreset(preset),
           ),
-          TextButton(
-            onPressed: () =>
-                SharePlus.instance.share(ShareParams(text: code, subject: 'Luminar backup code')),
-            child: const Text('Share'),
-          ),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
-        ],
+    ];
+    return SizedBox(
+      height: 84,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        itemCount: cards.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (_, i) => cards[i],
       ),
     );
   }
 
-  Future<void> _restore(BuildContext context) async {
-    final text = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Restore from backup', style: display(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Paste your backup code. This replaces the lights listed here.'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: text,
-              minLines: 3,
-              maxLines: 6,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'LAMPLIGHT1:…',
-              ),
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Restore')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    await c.restore(text.text);
-  }
+  Future<void> _addLight(BuildContext context) => showAddLightSheet(context, onPicked: c.addLight);
 
-  Future<void> _startOver(BuildContext context) async {
+  Future<void> _deleteScene(BuildContext context, int scene, String name) async {
     final ok = await confirm(
       context,
-      'Start over?',
-      'Luminar forgets all your lights. Each bulb will need a reset before you can add it again.',
-      action: 'Start over',
+      'Delete $name?',
+      'The scene is removed from every light.',
+      action: 'Delete',
       danger: true,
     );
-    if (ok) await c.startOver();
+    if (!ok) return;
+    await c.forgetScene(scene);
+    _stopEditingIfEmpty();
+  }
+
+  Future<void> _deletePreset(BuildContext context, Preset preset) async {
+    final ok = await confirm(
+      context,
+      'Delete ${preset.name}?',
+      'The scene is removed from this phone.',
+      action: 'Delete',
+      danger: true,
+    );
+    if (!ok) return;
+    await c.deletePreset(preset);
+    _stopEditingIfEmpty();
+  }
+
+  void _stopEditingIfEmpty() {
+    if (c.scenes.isEmpty && c.customPresets.isEmpty && mounted) {
+      setState(() => _editingScenes = false);
+    }
   }
 }
 
-Future<bool> confirm(
-  BuildContext context,
-  String title,
-  String body, {
-  required String action,
-  bool danger = false,
-}) async {
-  final p = Palette.of(context);
-  final r = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(title, style: display(20)),
-      content: Text(body),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: Text(action, style: TextStyle(color: danger ? p.danger : null)),
-        ),
-      ],
-    ),
-  );
-  return r == true;
-}
-
-class _FootButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  const _FootButton(this.label, this.onTap);
-  @override
-  Widget build(BuildContext context) => TextButton(
-    onPressed: onTap,
-    style: TextButton.styleFrom(foregroundColor: Palette.of(context).muted),
-    child: Text(label, style: const TextStyle(decoration: TextDecoration.underline, fontSize: 14)),
-  );
-}
-
-class _ConnPill extends StatelessWidget {
+/// The title, the connection, and the way to settings.
+class _Header extends StatelessWidget {
   final HomeViewModel viewModel;
-  const _ConnPill({required this.viewModel});
+  const _Header({required this.viewModel});
 
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
     final c = viewModel;
-    final (dot, label) = switch (c.connection) {
-      Connection.on => (p.on, 'Connected'),
-      Connection.connecting => (const Color(0xFFE0A526), 'Connecting'),
-      Connection.off => (p.off, 'Connect'),
-    };
-    return Material(
-      color: p.surface,
-      shape: StadiumBorder(side: BorderSide(color: p.line)),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: c.connection == Connection.connecting ? null : c.toggleConnection,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: dot),
-              ),
-              const SizedBox(width: 8),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            ],
+    final connecting = c.connection == Connection.connecting;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(header: true, child: Text('Home', style: display(30))),
+                const SizedBox(height: 2),
+                SizedBox(
+                  height: 32,
+                  child: Row(
+                    children: [
+                      if (connecting)
+                        const SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: CircularProgressIndicator(strokeWidth: 1.5),
+                        )
+                      else
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: c.isConnected ? const Color(0xFF3BB273) : p.off,
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      Text(c.connectionLabel, style: TextStyle(color: p.muted, fontSize: 14)),
+                      if (c.connection == Connection.off && c.lights.isNotEmpty)
+                        TextButton(
+                          onPressed: c.busy ? null : c.connect,
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                          child: const Text('Connect'),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          IconButton(
+            tooltip: 'Settings',
+            onPressed: () =>
+                Navigator.of(context)
+                    .push(MaterialPageRoute<void>(builder: (_) => SettingsScreen(viewModel: c))),
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Saved scenes: recall with a tap, save the current look, long-press to delete.
-class _Scenes extends StatelessWidget {
+/// What just happened, or what went wrong.
+class _StatusBanner extends StatelessWidget {
   final HomeViewModel viewModel;
-  const _Scenes({required this.viewModel});
+  const _StatusBanner({required this.viewModel});
 
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
     final c = viewModel;
-    return Padding(
-      padding: const EdgeInsets.only(top: 22),
+    final error = c.statusIsError;
+    return Semantics(
+      liveRegion: true,
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        alignment: Alignment.topCenter,
+        child: c.status.isEmpty
+            ? const SizedBox(width: double.infinity)
+            : Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                decoration: BoxDecoration(
+                  color: error ? p.danger.withValues(alpha: 0.1) : p.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: error ? p.danger.withValues(alpha: 0.35) : p.line),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (c.busy)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else
+                      Icon(
+                        error ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+                        size: 20,
+                        color: error ? p.danger : p.muted,
+                      ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(c.status, style: const TextStyle(fontSize: 14.5))),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+/// No lights yet: how to add the first one, or restore a backup.
+class _EmptyState extends StatelessWidget {
+  final HomeViewModel viewModel;
+  const _EmptyState({required this.viewModel});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    final c = viewModel;
+    Widget step(int n, String text) => Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: p.bg),
+            child: Text('$n', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: p.line),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Scenes', style: display(17)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final e in c.scenes.entries)
-                GestureDetector(
-                  onLongPress: () async {
-                    if (await confirm(
-                      context,
-                      'Delete ${e.value}?',
-                      'The scene is removed from every light.',
-                      action: 'Delete',
-                      danger: true,
-                    )) {
-                      await c.forgetScene(e.key);
-                    }
-                  },
-                  child: ActionChip(
-                    onPressed: () => c.recallScene(e.key),
-                    backgroundColor: p.surface,
-                    side: BorderSide(color: p.line),
-                    shape: const StadiumBorder(),
-                    label: Text(e.value),
-                  ),
-                ),
-              ActionChip(
-                onPressed: () => _save(context),
-                avatar: Icon(Icons.add, size: 18, color: p.text),
-                backgroundColor: Colors.transparent,
-                side: BorderSide(color: p.line),
-                shape: const StadiumBorder(),
-                label: const Text('Save current'),
-              ),
-            ],
+          Text('No lights yet', style: display(20)),
+          const SizedBox(height: 4),
+          Text(
+            'Set up your first bulb. It takes about 10 seconds.',
+            style: TextStyle(color: p.muted),
+          ),
+          step(1, 'Turn the bulb on, then off and on five times quickly until it flashes.'),
+          step(2, 'Tap Add a light and pick the bulb.'),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: c.busy ? null : () => showAddLightSheet(context, onPicked: c.addLight),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add a light'),
+          ),
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: () => showRestoreDialog(context, c),
+            child: const Text('Restore from a backup'),
           ),
         ],
       ),
     );
   }
+}
 
-  Future<void> _save(BuildContext context) async {
-    final name = TextEditingController(text: 'Scene ${viewModel.scenes.length + 1}');
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Save scene', style: display(20)),
-        content: TextField(
-          controller: name,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Name'),
-          onSubmitted: (_) => Navigator.pop(ctx, true),
+/// The last tile in the grid.
+class _AddTile extends StatelessWidget {
+  final VoidCallback? onTap;
+  const _AddTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Palette.of(context);
+    return Material(
+      color: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: p.line, width: 1.5),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_rounded, color: p.muted, size: 28),
+            const SizedBox(height: 6),
+            Text(
+              'Add a light',
+              style: TextStyle(color: p.muted, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
-        ],
       ),
     );
-    if (ok != true) return;
-    await viewModel.saveScene(name.text);
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/domain/models/widget_action.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/domain/models/widget_action.dart';
 
 import '../../support/harness.dart';
 import '../../support/mock_bulb.dart';

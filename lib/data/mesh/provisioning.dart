@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 import 'package:pointycastle/export.dart';
 
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/crypto.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/crypto.dart';
 
 // Provisioning session math (Mesh Profile 5.4.2) and P-256 ECDH.
 

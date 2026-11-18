@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/messages.dart';
-import 'package:luminar/data/mesh/network.dart';
-import 'package:luminar/data/mesh/proxy.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/services/timings.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/messages.dart';
+import 'package:lumina/data/mesh/network.dart';
+import 'package:lumina/data/mesh/proxy.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/timings.dart';
 
 /// The network state the proxy link needs: keys, addresses and SEQ.
 abstract interface class MeshKeyring {

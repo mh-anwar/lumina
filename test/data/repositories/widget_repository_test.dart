@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar/data/repositories/widget_repository.dart';
-import 'package:luminar/data/services/home_widget_service.dart';
-import 'package:luminar/domain/models/widget_action.dart';
+import 'package:lumina/data/repositories/widget_repository.dart';
+import 'package:lumina/data/services/home_widget_service.dart';
+import 'package:lumina/domain/models/widget_action.dart';
 
 void main() {
   test('redraws the widgets only when the status changes', () async {
     final service = MemoryHomeWidgetService();
-    final r = WidgetRepository(service: service, portName: 'luminar.test.redraw');
+    final r = WidgetRepository(service: service, portName: 'lumina.test.redraw');
     expect(await r.lastStatus(), isNull);
     await r.show(WidgetStatus.on);
     await r.show(WidgetStatus.on);
@@ -16,10 +16,10 @@ void main() {
   });
 
   test('hands a tap to the running app and returns its answer', () async {
-    final app = WidgetRepository(service: MemoryHomeWidgetService(), portName: 'luminar.test.app');
+    final app = WidgetRepository(service: MemoryHomeWidgetService(), portName: 'lumina.test.app');
     final widget = WidgetRepository(
       service: MemoryHomeWidgetService(),
-      portName: 'luminar.test.app',
+      portName: 'lumina.test.app',
     );
     expect(await widget.askApp(const ToggleAllAction()), isNull, reason: 'app not running');
 
@@ -36,11 +36,11 @@ void main() {
   });
 
   test('gives up on an app that does not answer', () async {
-    final app = WidgetRepository(service: MemoryHomeWidgetService(), portName: 'luminar.test.mute');
+    final app = WidgetRepository(service: MemoryHomeWidgetService(), portName: 'lumina.test.mute');
     app.listen().listen((_) {});
     final widget = WidgetRepository(
       service: MemoryHomeWidgetService(),
-      portName: 'luminar.test.mute',
+      portName: 'lumina.test.mute',
     );
     expect(
       await widget.askApp(const ToggleAllAction(), timeout: const Duration(milliseconds: 50)),

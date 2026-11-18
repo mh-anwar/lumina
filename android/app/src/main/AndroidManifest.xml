@@ -13,7 +13,7 @@
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
     <application
-        android:label="Luminar"
+        android:label="Lumina"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -41,7 +41,7 @@
                 android:resource="@xml/shortcuts" />
         </activity>
         <!-- App shortcuts run here: no UI, closes at once. Not exported; the
-             launcher starts shortcuts on Luminar's behalf. -->
+             launcher starts shortcuts on Lumina's behalf. -->
         <activity
             android:name=".ShortcutActivity"
             android:excludeFromRecents="true"

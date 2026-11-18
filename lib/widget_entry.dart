@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:luminar/config/dependencies.dart';
-import 'package:luminar/data/services/ble/reactive_ble_service.dart';
-import 'package:luminar/data/services/home_store.dart';
-import 'package:luminar/domain/models/widget_action.dart';
+import 'package:lumina/config/dependencies.dart';
+import 'package:lumina/data/services/ble/reactive_ble_service.dart';
+import 'package:lumina/data/services/home_store.dart';
+import 'package:lumina/domain/models/widget_action.dart';
 
 /// Runs in a background isolate when a home-screen widget is tapped.
 ///
@@ -35,7 +35,7 @@ Future<void> widgetTapped(Uri? uri) async {
     // the link closes.
     await Future<void>.delayed(const Duration(milliseconds: 400));
   } catch (e) {
-    debugPrint('[luminar] Widget action failed: $e');
+    debugPrint('[lumina] Widget action failed: $e');
   } finally {
     await deps.connection.disconnect();
     await widgets.show(status);

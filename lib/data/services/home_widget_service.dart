@@ -1,8 +1,8 @@
 import 'package:home_widget/home_widget.dart';
 
-import 'package:luminar/domain/models/widget_action.dart';
+import 'package:lumina/domain/models/widget_action.dart';
 
-/// Draws Luminar's home-screen widgets.
+/// Draws Lumina's home-screen widgets.
 abstract interface class HomeWidgetService {
   Future<WidgetStatus?> lastStatus();
   Future<void> show(WidgetStatus status);

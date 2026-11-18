@@ -2,23 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:luminar/data/repositories/connection_repository.dart';
-import 'package:luminar/data/repositories/home_repository.dart';
-import 'package:luminar/data/repositories/light_repository.dart';
-import 'package:luminar/data/repositories/scene_repository.dart';
-import 'package:luminar/data/repositories/widget_repository.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/services/provisioning_service.dart';
-import 'package:luminar/domain/models/connection.dart';
-import 'package:luminar/domain/models/home.dart';
-import 'package:luminar/domain/models/light.dart';
-import 'package:luminar/domain/models/light_state.dart';
-import 'package:luminar/domain/models/nearby_bulb.dart';
-import 'package:luminar/domain/models/preset.dart';
-import 'package:luminar/domain/models/widget_action.dart';
-import 'package:luminar/domain/use_cases/add_light_use_case.dart';
-import 'package:luminar/domain/use_cases/connect_use_case.dart';
+import 'package:lumina/data/repositories/connection_repository.dart';
+import 'package:lumina/data/repositories/home_repository.dart';
+import 'package:lumina/data/repositories/light_repository.dart';
+import 'package:lumina/data/repositories/scene_repository.dart';
+import 'package:lumina/data/repositories/widget_repository.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/provisioning_service.dart';
+import 'package:lumina/domain/models/connection.dart';
+import 'package:lumina/domain/models/home.dart';
+import 'package:lumina/domain/models/light.dart';
+import 'package:lumina/domain/models/light_state.dart';
+import 'package:lumina/domain/models/nearby_bulb.dart';
+import 'package:lumina/domain/models/preset.dart';
+import 'package:lumina/domain/models/widget_action.dart';
+import 'package:lumina/domain/use_cases/add_light_use_case.dart';
+import 'package:lumina/domain/use_cases/connect_use_case.dart';
 
 /// State and commands for the home screen: the connection, all lights,
 /// each light, scenes, and backup.
@@ -96,8 +96,41 @@ class HomeViewModel extends ChangeNotifier {
     if (!isConnected && !s.known) return 'Not connected';
     if (isConnected && !s.responding) return 'Not responding';
     if (!s.on) return 'Off';
-    return 'On, ${l.level}%${l.hasCtl ? ', ${l.kelvin} K' : ''}';
+    return '${l.level}%${l.hasCtl ? ' · ${warmth(l.kelvin)}' : ''}';
   }
+
+  /// A light that needs the user before it can be controlled.
+  bool needsAction(Light l) => l.wasReset || !l.configured;
+
+  /// What tapping a light that needs the user does.
+  String? actionLabel(Light l) => l.wasReset
+      ? 'Set up again'
+      : !l.configured
+      ? 'Finish setup'
+      : null;
+
+  /// The all-lights tile's status.
+  String get allStatus {
+    final n = onCount, total = ready.length;
+    if (n == 0) return 'All off';
+    final which = n == total ? 'All on' : '$n of $total on';
+    return '$which · $allLevel%';
+  }
+
+  /// A color temperature in words.
+  static String warmth(int kelvin) => switch (kelvin) {
+    < 3300 => 'Warm',
+    < 4500 => 'Neutral',
+    < 5500 => 'Cool',
+    _ => 'Daylight',
+  };
+
+  /// Connection, in a few words for the header.
+  String get connectionLabel => switch (connection) {
+    Connection.on => 'Connected',
+    Connection.connecting => 'Connecting…',
+    Connection.off => 'Not connected',
+  };
 
   void _say(String msg, {bool error = false}) {
     _status = msg;
@@ -146,7 +179,9 @@ class HomeViewModel extends ChangeNotifier {
             for (final l in lights)
               if (l.wasReset) l.name,
           ];
-          _say(reset.isEmpty ? 'Connected.' : 'Connected. ${_resetMessage(reset)}');
+          // The header already says Connected; only reset lights need a message.
+          _log.add('Connected.');
+          _say(_resetMessage(reset), error: reset.isNotEmpty);
         case NoLights():
           _say('Add a light first.');
         case NoneFound():
@@ -176,14 +211,14 @@ class HomeViewModel extends ChangeNotifier {
 
   static String _resetMessage(List<String> names) => switch (names) {
     [] => '',
-    [final one] => '$one was reset. Tap Set up again next to it.',
+    [final one] => '$one was reset. Tap it to set it up again.',
     [...final rest, final last] =>
-      '${rest.join(', ')} and $last were reset. Tap Set up again next to each.',
+      '${rest.join(', ')} and $last were reset. Tap each one to set it up again.',
   };
 
   Future<void> disconnect() => _connection.disconnect();
 
-  /// The connection pill: connect, or disconnect when connected.
+  /// Connect, or disconnect when connected.
   Future<void> toggleConnection() => isConnected ? disconnect() : connect();
 
   // ---------- home-screen widgets ----------
@@ -227,7 +262,7 @@ class HomeViewModel extends ChangeNotifier {
           _say('${light.name} is ready.');
         case LightNeedsSetup(:final light):
           _say(
-            '${light.name} was added but needs one more step. Tap Finish setup next to it.',
+            '${light.name} was added but needs one more step. Tap it to finish setup.',
             error: true,
           );
       }
@@ -266,7 +301,7 @@ class HomeViewModel extends ChangeNotifier {
     ProvisioningError.failed =>
       'The bulb stopped setup (error ${e.code ?? '?'}). Reset it and try again.',
     ProvisioningError.unexpected => 'The bulb sent an unexpected reply. Reset it and try again.',
-    ProvisioningError.unsupported => 'This bulb uses a setup method Luminar does not support.',
+    ProvisioningError.unsupported => 'This bulb uses a setup method Lumina does not support.',
     ProvisioningError.securityCheck =>
       'The bulb failed its security check. Reset it and try again.',
   };
@@ -363,6 +398,36 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> forgetScene(int scene) => _scenes.forget(scene);
+
+  // ---------- the user's presets ----------
+
+  /// Presets the user made. The built-in ones are [presets].
+  List<Preset> get customPresets => _home.home.presets;
+
+  /// Shows a brightness and warmth on every light while a preset is being
+  /// made, without asking to connect.
+  void preview({int? level, int? kelvin}) {
+    if (isConnected) _lights.setAll(level: level, kelvin: kelvin);
+  }
+
+  /// Saves a preset that sets every light to [level] and [kelvin]. Returns
+  /// false if the name can't be used.
+  Future<bool> savePreset(String name, {required int level, required int kelvin}) async {
+    final n = name.trim();
+    if (n.isEmpty) {
+      _say('Give the scene a name.', error: true);
+      return false;
+    }
+    if (presets.any((p) => p.name.toLowerCase() == n.toLowerCase())) {
+      _say('$n is already a built-in scene. Pick another name.', error: true);
+      return false;
+    }
+    await _home.savePreset(Preset(n, level, kelvin));
+    _say('Saved $n. Tap it to use it.');
+    return true;
+  }
+
+  Future<void> deletePreset(Preset p) => _home.removePreset(p.name);
 
   // ---------- backup ----------
 

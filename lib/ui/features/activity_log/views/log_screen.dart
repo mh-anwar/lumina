@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:luminar/ui/core/theme.dart';
-import 'package:luminar/ui/features/activity_log/view_models/activity_log_view_model.dart';
+import 'package:lumina/ui/core/theme.dart';
+import 'package:lumina/ui/features/activity_log/view_models/activity_log_view_model.dart';
 
 /// Every PDU and event, for debugging with real bulbs.
 class LogScreen extends StatefulWidget {
@@ -46,7 +46,7 @@ class _LogScreenState extends State<LogScreen> {
             tooltip: 'Share',
             icon: const Icon(Icons.share),
             onPressed: () =>
-                SharePlus.instance.share(ShareParams(text: vm.text, subject: 'Luminar log')),
+                SharePlus.instance.share(ShareParams(text: vm.text, subject: 'Lumina log')),
           ),
         ],
       ),

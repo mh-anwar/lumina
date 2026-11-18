@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:luminar/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/bytes.dart';
 
 // Access-layer opcodes and parameters for every SIG model the Sengled bulbs
 // expose (Mesh Model spec 1.1). Access-message parameters are little-endian.
@@ -17,7 +17,7 @@ abstract final class Models {
   static const schedulerSetup = 0x1207;
   static const time = 0x1200;
 
-  /// Models Luminar binds its AppKey to, by the key stored in [Light.models].
+  /// Models Lumina binds its AppKey to, by the key stored in [Light.models].
   static const bindable = {
     'onoff': onOff,
     'lightness': lightness,

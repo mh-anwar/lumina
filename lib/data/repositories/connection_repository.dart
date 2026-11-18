@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:luminar/data/mesh/bytes.dart';
-import 'package:luminar/data/mesh/network.dart';
-import 'package:luminar/data/repositories/home_repository.dart';
-import 'package:luminar/data/services/activity_log.dart';
-import 'package:luminar/data/services/ble/ble_service.dart';
-import 'package:luminar/data/services/mesh_proxy_service.dart';
-import 'package:luminar/data/services/timings.dart';
-import 'package:luminar/domain/models/connection.dart';
+import 'package:lumina/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/network.dart';
+import 'package:lumina/data/repositories/home_repository.dart';
+import 'package:lumina/data/services/activity_log.dart';
+import 'package:lumina/data/services/ble/ble_service.dart';
+import 'package:lumina/data/services/mesh_proxy_service.dart';
+import 'package:lumina/data/services/timings.dart';
+import 'package:lumina/domain/models/connection.dart';
 
 /// How [ConnectionRepository.connect] ended.
 sealed class ConnectResult {

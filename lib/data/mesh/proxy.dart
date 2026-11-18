@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:luminar/data/mesh/bytes.dart';
+import 'package:lumina/data/mesh/bytes.dart';
 
 /// Proxy PDU message types.
 abstract final class ProxyType {
