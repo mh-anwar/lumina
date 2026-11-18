@@ -3,8 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Lumina's palette: evening blue in dark mode, cool grey in light mode,
-/// and one warm accent ([on]) for anything that is lit or switched on.
+/// Corner radii: small for controls, medium for tiles and cards.
+const radiusSmall = 8.0, radiusMedium = 12.0;
+
+/// Lumina's palette: ink on warm paper in light mode, graphite in dark mode.
+/// The interface itself stays black and white; color comes only from lights
+/// that are on ([kelvinColor]).
 @immutable
 class Palette extends ThemeExtension<Palette> {
   final Color bg, surface, text, muted, line, off, danger, on;
@@ -20,22 +24,22 @@ class Palette extends ThemeExtension<Palette> {
   });
 
   static const dark = Palette(
-    bg: Color(0xFF182033),
-    surface: Color(0xFF212B42),
-    text: Color(0xFFEDE8DF),
-    muted: Color(0xFF9AA3B5),
-    line: Color(0xFF2E3A55),
-    off: Color(0xFF34405C),
-    danger: Color(0xFFF2B8B5),
+    bg: Color(0xFF111111),
+    surface: Color(0xFF1A1A1A),
+    text: Color(0xFFECEAE6),
+    muted: Color(0xFF8F8B85),
+    line: Color(0xFF2A2927),
+    off: Color(0xFF2E2D2B),
+    danger: Color(0xFFEF8F86),
   );
 
   static const light = Palette(
-    bg: Color(0xFFE9ECF2),
+    bg: Color(0xFFF4F2EE),
     surface: Color(0xFFFFFFFF),
-    text: Color(0xFF1C2436),
-    muted: Color(0xFF5B6478),
-    line: Color(0xFFD3D8E2),
-    off: Color(0xFFC9CFDA),
+    text: Color(0xFF181715),
+    muted: Color(0xFF6F6A63),
+    line: Color(0xFFE2DED7),
+    off: Color(0xFFEAE7E1),
     danger: Color(0xFFB3261E),
   );
 
@@ -73,7 +77,7 @@ ThemeData buildTheme(Brightness b) {
   final base = ThemeData(
     brightness: b,
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFFD6AA), brightness: b).copyWith(
+    colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF8A8580), brightness: b).copyWith(
       surface: p.surface,
       onSurface: p.text,
       primary: p.text,
@@ -89,8 +93,20 @@ ThemeData buildTheme(Brightness b) {
       .apply(bodyColor: p.text, displayColor: p.text);
   return base.copyWith(
     textTheme: text,
-    dialogTheme: DialogThemeData(backgroundColor: p.surface),
-    bottomSheetTheme: BottomSheetThemeData(backgroundColor: p.bg),
+    dialogTheme: DialogThemeData(
+      backgroundColor: p.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusMedium)),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: p.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusSmall)),
+    ),
+    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
     dividerColor: p.line,
     iconTheme: IconThemeData(color: p.text),
     listTileTheme: ListTileThemeData(iconColor: p.muted, textColor: p.text),
@@ -100,6 +116,7 @@ ThemeData buildTheme(Brightness b) {
         foregroundColor: p.bg,
         minimumSize: const Size(0, 48),
         padding: const EdgeInsets.symmetric(horizontal: 22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusSmall)),
         textStyle: GoogleFonts.figtree(fontWeight: FontWeight.w600, fontSize: 16),
       ),
     ),
@@ -109,21 +126,27 @@ ThemeData buildTheme(Brightness b) {
         side: BorderSide(color: p.line),
         minimumSize: const Size(0, 48),
         padding: const EdgeInsets.symmetric(horizontal: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusSmall)),
         textStyle: GoogleFonts.figtree(fontWeight: FontWeight.w600, fontSize: 15),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: p.text,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusSmall)),
         textStyle: GoogleFonts.figtree(fontWeight: FontWeight.w600, fontSize: 15),
       ),
     ),
     switchTheme: SwitchThemeData(
       trackColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? p.on : p.off,
+        (s) => s.contains(WidgetState.selected) ? p.text : p.off,
       ),
-      thumbColor: WidgetStateProperty.all(p.surface),
-      trackOutlineColor: WidgetStateProperty.all(p.line),
+      thumbColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? p.bg : p.muted,
+      ),
+      trackOutlineColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? p.text : p.line,
+      ),
     ),
   );
 }

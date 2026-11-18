@@ -132,7 +132,7 @@ class SettingsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Palette.of(ctx).bg,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(radiusSmall),
                 ),
                 child: SelectableText(
                   code,
@@ -222,7 +222,7 @@ class _Group extends StatelessWidget {
       color: p.surface,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(radiusMedium),
         side: BorderSide(color: p.line),
       ),
       child: Column(
